@@ -1,0 +1,143 @@
+/* src/pages/Login.css */
+
+/* 1. Definimos tu paleta de colores globalmente */
+:root {
+  /* Estados */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Primarios */
+  --color-primary: #17315E;
+  --color-primary-hover: #102548;
+  --color-primary-light: #2E5AAC;
+  --color-secondary: #EAF2FF;
+  
+  /* Fondos y bordes */
+  --color-bg-main: #F8FAFC;
+  --color-bg-card: #FFFFFF;
+  --color-border: #E2E8F0;
+  
+  /* Textos */
+  --color-text-main: #1E293B;
+  --color-text-sec: #64748B;
+  --color-disabled: #CBD5E1;
+}
+
+/* 2. Estructura base */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Contenedor que centra el rectángulo en la pantalla */
+.login-page-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  /* Usamos tu Azul Oscuro (#102548) para salvar esos ojos */
+  background-color: var(--color-primary-hover); 
+}
+
+/* El rectángulo blanco (Tarjeta) */
+.login-card {
+  background-color: var(--color-bg-card);
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Tipografía */
+.login-title {
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary); /* Azul marino */
+}
+
+.login-subtitle {
+  color: var(--color-text-sec); /* Gris */
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+/* Mensaje de error */
+.error-message {
+  color: var(--color-error);
+  background-color: #FEF2F2; /* Fondo rojizo muy suave */
+  border: 1px solid var(--color-error);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Inputs y Labels */
+.form-group {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  color: var(--color-text-main);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-main);
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.form-input::placeholder {
+  color: var(--color-disabled);
+}
+
+.form-input:focus {
+  border-color: var(--color-primary-light);
+  /* Un brillo suave azul muy claro cuando haces clic */
+  box-shadow: 0 0 0 3px var(--color-secondary); 
+  outline: none;
+}
+
+/* Botón de ingresar */
+.form-button {
+  width: 100%;
+  padding: 0.85rem;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 1rem;
+}
+
+.form-button:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.form-button:active {
+  transform: scale(0.98);
+}
