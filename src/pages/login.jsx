@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // 1. Agregamos esto
 import "./Login.css";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const navigate = useNavigate(); // 2. Iniciamos el hook para navegar
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -13,55 +15,36 @@ export default function Login() {
     try {
       const response = await fetch("http://localhost:5000/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-
-      console.log("Status:", response.status);
-      console.log("Respuesta:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Credenciales inválidas");
       }
 
-      // Guardar token
+      // Guardar datos
       localStorage.setItem("token", data.token);
-
-      // Guardar información del usuario
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Guardar rol por comodidad
       localStorage.setItem("rol", data.user.rol);
-
-      console.log("=================================");
-      console.log("LOGIN EXITOSO");
-      console.log("Token:", data.token);
-      console.log("Usuario:", data.user);
-      console.log("Rol:", data.user.rol);
-      console.log("=================================");
 
       alert(`Bienvenido ${data.user.nombre}`);
 
-      // Cuando exista React Router simplemente reemplazar por:
-      //
-      // if (data.user.rol === "admin") {
-      //     navigate("/admin");
-      // } else {
-      //     navigate("/teacher");
-      // }
+      if (data.user.rol === "admin") {
+          navigate("/admin"); // Te manda a la ruta del admin
+      } else {
+          navigate("/teacher"); // Te manda a la ruta del profe
+      }
 
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || "Error al iniciar sesión");
     }
   };
+
+  //aca solo van como los componentes de la pagina, que hace que despues sepueda modificar el diseño de la pag
 
   return (
     <div className="login-page-wrapper">
