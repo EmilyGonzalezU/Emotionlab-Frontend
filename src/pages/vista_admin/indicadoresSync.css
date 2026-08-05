@@ -1,0 +1,188 @@
+/* =========================================
+   indicadores.css (Versión Compacta y Profesional)
+   ========================================= */
+
+.sync-dashboard {
+  padding: 0; /* Quitamos padding extra arriba */
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #1E293B; 
+}
+
+/* Título principal más compacto */
+.sync-titulo {
+  color: #17315E !important; 
+  font-size: 20px; /* Era 24px */
+  font-weight: 600;
+  margin-bottom: 15px; /* Reducido */
+  border-bottom: 2px solid #E2E8F0;
+  padding-bottom: 10px; /* Reducido */
+}
+
+/* --- LAYOUT --- */
+.dashboard-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 20px; /* Un poco menos de separación entre izquierda y derecha */
+  align-items: flex-start;
+}
+
+.panel-izquierdo {
+  flex: 2;
+  min-width: 0; 
+}
+
+.panel-derecho {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Tarjetas más juntas */
+}
+
+/* --- TARJETAS (Dieta aplicada) --- */
+.sync-card {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 16px 20px; /* Reducimos el tremendo padding de 24px */
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); 
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.sync-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(23, 49, 94, 0.1); 
+}
+
+/* Íconos más pequeños y sutiles */
+.card-icono {
+  font-size: 24px; /* Era 32px */
+  background-color: #EAF2FF; 
+  color: #17315E; 
+  width: 48px; /* Era 65px */
+  height: 48px; /* Era 65px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px; 
+}
+
+.card-info h3 {
+  margin: 0 0 3px 0;
+  font-size: 11px; /* Letra de subtítulo más delicada */
+  color: #64748B !important; 
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.card-info p {
+  margin: 0;
+  font-size: 18px; /* Era 26px (por eso la fecha se veía gigante) */
+  font-weight: 700;
+  color: #1E293B !important; 
+}
+
+/* --- CONTENEDOR DE LA TABLA --- */
+.logs-container {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  padding: 20px; /* Bajamos de 30px a 20px para ahorrar espacio */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.logs-titulo {
+  color: #17315E !important; 
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px; /* Título de tabla más recatado */
+  font-weight: 600;
+}
+
+/* --- TABLA (Filas más delgadas) --- */
+.tabla-responsive {
+  overflow-x: auto;
+}
+
+.tabla-logs {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tabla-logs thead tr {
+  background-color: #F8FAFC; 
+  border-bottom: 2px solid #E2E8F0; 
+}
+
+.tabla-logs th {
+  padding: 10px 12px; /* Reducimos el relleno de cabeceras */
+  color: #64748B; 
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabla-logs td {
+  padding: 10px 12px; /* Filas mucho más delgadas */
+  color: #1E293B !important; 
+  font-size: 13px; /* Letra un puntito más chica para los datos */
+  border-bottom: 1px solid #E2E8F0;
+  transition: background-color 0.2s ease;
+}
+
+.tabla-logs tbody tr:hover td {
+  background-color: #EAF2FF; 
+}
+
+/* TRUCO: Evitamos que la primera columna (Fecha/Hora) se corte en dos líneas */
+.tabla-logs td:first-child {
+  white-space: nowrap;
+}
+
+.id-celda {
+  font-family: monospace;
+  color: #64748B !important;
+  word-break: break-all;
+  max-width: 150px;
+  line-height: 1.3;
+}
+
+.texto-centrado {
+  text-align: center;
+  color: #64748B !important;
+  font-style: italic;
+  padding: 20px !important;
+}
+
+/* --- BADGES (Etiquetas de estado más compactas) --- */
+.badge-estado {
+  padding: 4px 10px; /* Etiqueta menos "gorda" */
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-estado.pendiente {
+  background-color: #FEF3C7; 
+  color: #F59E0B !important; 
+}
+
+.badge-estado.listo {
+  background-color: #DCFCE7; 
+  color: #22C55E !important; 
+}
+
+/* --- RESPONSIVO --- */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    flex-direction: column-reverse; 
+  }
+  .panel-izquierdo, .panel-derecho {
+    width: 100%;
+  }
+}

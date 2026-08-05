@@ -4,84 +4,86 @@
   min-height: 100vh;
 }
 
-/* Barra lateral (Sidebar) */
+/* Barra lateral (Sidebar) un pelín más delgada */
 .admin-sidebar {
-  width: 250px;
-  background-color: #17315E; /* Azul Marino (Primario) */
+  width: 230px; /* Adelgazamos la barra un poco */
+  background-color: #17315E; 
   color: #FFFFFF;
-  padding: 25px 20px;
+  padding: 20px 15px; /* Menos relleno a los lados */
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05); /* Sombra suave hacia la derecha */
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
   z-index: 10;
 }
 
 /* Título / Logo de la barra lateral */
 .sidebar-brand {
   text-align: center;
-  border-bottom: 1px solid #2E5AAC; /* Azul Medio para el separador */
-  padding-bottom: 20px;
+  border-bottom: 1px solid #2E5AAC; 
+  padding-bottom: 15px; /* Menos espacio abajo */
   margin-top: 0;
-  font-size: 26px;
+  font-size: 22px; /* Letra más delicada */
   font-weight: 700;
   color: #FFFFFF;
-  letter-spacing: 1px;
 }
 
 /* Contenedor de los enlaces */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px; 
-  margin-top: 25px;
-  flex: 1; /* Esto empuja el botón de cerrar sesión hacia abajo */
+  gap: 4px; /* ¡AQUÍ ESTÁ LA MAGIA! Juntamos mucho más las opciones */
+  margin-top: 20px;
+  flex: 1; 
+  justify-content: flex-start; /* Obligamos a que se queden pegadas arriba */
 }
 
-/* Enlaces del menú */
+/* Enlaces del menú (En dieta) */
 .sidebar-link {
-  color: #EAF2FF; /* Azul Muy Claro (Elementos Secundarios) */
+  color: #EAF2FF; 
   text-decoration: none;
-  font-size: 16px;
+  font-size: 14px; /* Un puntito más chica para que se vea fina */
   font-weight: 500;
-  padding: 12px 16px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  padding: 10px 14px; /* ¡Le quitamos lo gordo! */
+  border-radius: 6px; /* Borde un poco más cuadrado y serio */
+  transition: all 0.2s ease;
+  display: block; /* Quitamos flex aquí para evitar que el texto se separe raro */
 }
 
-/* Efecto Hover en los enlaces */
 .sidebar-link:hover {
-  background-color: #102548; /* Azul Oscuro (Hover) */
+  background-color: #102548; 
   color: #FFFFFF;
-  transform: translateX(5px); /* Animación suave hacia la derecha */
+  transform: translateX(4px); /* Un saltito más sutil */
 }
 
-/* Botón de cerrar sesión */
+/* --- BOTÓN DE LOGOUT (VERSIÓN SLIM) --- */
 .btn-logout {
-  padding: 14px;
-  background-color: #EF4444; /* Estado: Error (Rojo) */
-  color: #FFFFFF;
-  border: none;
-  border-radius: 8px;
+  padding: 10px 14px; /* Menos gordo */
+  margin-top: auto; /* Nos aseguramos 100% de que se vaya al fondo */
+  
+  background-color: transparent; 
+  color: #F87171; 
+  border: 1px solid #F87171;
+  border-radius: 6px;
+  
   cursor: pointer;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px; /* Letra equilibrada con el resto del menú */
   transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+  text-align: center;
 }
 
 .btn-logout:hover {
-  background-color: #DC2626; /* Rojo ligeramente más oscuro */
+  background-color: #EF4444; 
+  color: #FFFFFF;
+  border-color: #EF4444;
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 /* Contenido central dinámico */
 .admin-main-content {
   flex: 1;
   padding: 40px;
-  background-color: #F8FAFC; /* Blanco Cálido (Fondo principal) */
-  overflow-y: auto; /* Permite hacer scroll en el centro si el contenido es muy largo */
+  background-color: #F8FAFC; 
+  overflow-y: auto; 
 }

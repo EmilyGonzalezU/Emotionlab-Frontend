@@ -1,14 +1,14 @@
 import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import './menu_admin.css'; // Importamos la magia del diseño
+import './menu_admin.css';
 
 export default function MenuAdmin() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Esto borra el token viejo (¡y todo lo demás!)
+    // se borra el token viejo una vez q cierre sesion
     localStorage.clear(); 
-    // Te patea a la pantalla de login
+    // te patea a la pantalla de login
     navigate('/'); 
   };
 
@@ -22,9 +22,9 @@ export default function MenuAdmin() {
         </h2>
         
         <nav className="sidebar-nav">
-          <Link to="/admin" className="sidebar-link">🏠 Home</Link>
-          <Link to="/admin/visualizadores" className="sidebar-link">👥 Visualizadores</Link>
-          <Link to="/admin/cuenta" className="sidebar-link">⚙️ Cuenta</Link>
+          <Link to="/admin" className="sidebar-link">Inicio</Link>
+          <Link to="/admin/visualizadores" className="sidebar-link">Visualizadores</Link>
+          <Link to="/admin/cuenta" className="sidebar-link">Cuenta</Link>
         </nav>
 
         <button onClick={handleLogout} className="btn-logout">
@@ -34,7 +34,7 @@ export default function MenuAdmin() {
 
       {/* CONTENIDO CENTRAL DINÁMICO */}
       <main className="admin-main-content">
-        {/* ¡Aquí es donde React inyectará Home, Visualizadores o Cuenta mágicamente! */}
+        {/* home, visualizadores y cuenta */}
         <Outlet /> 
       </main>
 

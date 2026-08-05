@@ -1,47 +1,187 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function HomeTeacher() {
-  // Rescatamos la info que se guardo en el login
-  const user = JSON.parse(localStorage.getItem('user'));
+  const navigate = useNavigate();
+  const [estado, setEstado] = useState({
+    cargando: true,
+    datosBienestar: [],
+    sesionesPorDia: []
+  });
 
-  // Función para cerrar sesión y redireccion al login
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
+  useEffect(() => {
+    const obtenerDatos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const respuesta = await fetch('http://localhost:5000/sessions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (respuesta.ok) {
+          const sesiones = await respuesta.json();
+          
+          // --- 1. PROCESAR BIENESTAR (Alto vs Bajo vs Pendiente) ---
+          let contadorSi = 0;
+          let contadorNo = 0;
+          let contadorPendiente = 0;
+          
+          // --- 2. AGRUPAR POR FECHA ---
+          const gruposFecha = {};
+
+          sesiones.forEach(sesion => {
+            // Lógica Bienestar Corregida para atrapar los "null" y leer la IA
+            if (sesion.bienestar === null || sesion.bienestar === undefined || sesion.bienestar === '') {
+              contadorPendiente++;
+            } else {
+              const bienestar = String(sesion.bienestar).toLowerCase();
+              // ¡Aquí está la magia! Ahora acepta "alto bienestar"
+              if (bienestar === 'sí' || bienestar === 'si' || bienestar === 'true' || bienestar === 'alto bienestar') {
+                contadorSi++;
+              } else {
+                contadorNo++; // Todo lo demás (incluyendo "bajo bienestar") se va acá
+              }
+            }
+
+            // Lógica Fecha
+            const fechaRaw = sesion.updated_at || sesion.created_at;
+            if (fechaRaw) {
+              const fechaStr = new Date(fechaRaw).toLocaleDateString('es-CL');
+              gruposFecha[fechaStr] = (gruposFecha[fechaStr] || 0) + 1;
+            }
+          });
+
+          // Formatear para el gráfico con los nombres actualizados de la IA
+          const datosPie = [
+            { name: 'Alto Bienestar', value: contadorSi, color: '#22C55E' }, // Verde éxito
+            { name: 'Bajo Bienestar', value: contadorNo, color: '#EF4444' }, // Rojo error
+            { name: 'IA Evaluando', value: contadorPendiente, color: '#F59E0B' } // Amarillo cargando
+          ].filter(item => item.value > 0);
+
+          // Formatear para la tabla
+          const datosTabla = Object.keys(gruposFecha).map(fecha => ({
+            fecha: fecha,
+            total: gruposFecha[fecha]
+          }));
+
+          setEstado({
+            cargando: false,
+            datosBienestar: datosPie,
+            sesionesPorDia: datosTabla
+          });
+        }
+      } catch (error) {
+        console.error("Error cargando datos", error);
+        setEstado(prev => ({ ...prev, cargando: false }));
+      }
+    };
+
+    obtenerDatos();
+  }, []);
+
+  // Función para cuando hagan clic en una fila de la tabla
+  const irADetalleDia = (fecha) => {
+    // Reemplazamos los slashes si es que la fecha los trae, por guiones para la URL
+    const fechaUrl = fecha.replaceAll('/', '-'); 
+    navigate(`/sesiones/${fechaUrl}`);
   };
 
   return (
-    <div style={{ padding: '50px', textAlign: 'center', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
-      <h1>Panel de Visualización (Teacher) 👀</h1>
-      <h2>¡Bienvenido/a, {user?.nombre || "Usuario"}!</h2>
-      
-      <div style={{ 
-        margin: '20px auto', 
-        padding: '20px', 
-        border: '2px dashed #4fa94d', 
-        maxWidth: '400px',
-        backgroundColor: 'white',
-        borderRadius: '8px'
-      }}>
-        <p><em>Estás en modo visualizador. No tienes permisos de administrador.</em></p>
-        <hr style={{ margin: '15px 0' }}/>
-        <p><strong>Tu correo:</strong> {user?.email}</p>
-        <p><strong>Tu rol en el sistema:</strong> {user?.rol}</p>
-      </div>
+    <div className="home-container">
+      <h1 style={{ color: '#17315E', fontSize: '26px', marginTop: 0, marginBottom: '8px', fontWeight: 'bold' }}>
+        Panel del Visualizador
+      </h1>
+      <p style={{ color: '#64748B', fontSize: '15px', marginBottom: '25px', marginTop: 0 }}>
+        Resumen general de bienestar y agrupaciones de sesiones por fecha.
+      </p>
 
-      <button 
-        onClick={handleLogout} 
-        style={{ 
-          padding: '10px 20px', 
-          cursor: 'pointer', 
-          backgroundColor: '#ff4d4d', 
-          color: 'white', 
-          border: 'none', 
-          borderRadius: '5px',
-          fontWeight: 'bold'
-        }}>
-        Cerrar Sesión
-      </button>
+      <div className="dashboard-layout">
+        
+        {/* PANEL IZQUIERDO: La Tabla de Sesiones por Día */}
+        <div className="panel-izquierdo">
+          <div className="logs-container">
+            <h3 className="logs-titulo">Sesiones por Día</h3>
+            
+            <div className="tabla-responsive">
+              <table className="tabla-logs">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cantidad de Sesiones</th>
+                    <th style={{ textAlign: 'right' }}>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {estado.cargando ? (
+                    <tr><td colSpan="3" className="texto-centrado">Cargando datos...</td></tr>
+                  ) : estado.sesionesPorDia.length === 0 ? (
+                    <tr><td colSpan="3" className="texto-centrado">No hay sesiones registradas</td></tr>
+                  ) : (
+                    estado.sesionesPorDia.map((item, index) => (
+                      <tr 
+                        key={index} 
+                        onClick={() => irADetalleDia(item.fecha)}
+                        style={{ cursor: 'pointer' }} // El cursor de "manito" avisa que es clickeable
+                      >
+                        <td style={{ fontWeight: 'bold', color: '#17315E' }}>{item.fecha}</td>
+                        <td>
+                          <span className="badge-estado listo" style={{ backgroundColor: '#EAF2FF', color: '#17315E' }}>
+                            {item.total} sesiones
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right', color: '#3B82F6', fontWeight: '600', fontSize: '13px' }}>
+                          Ver detalles →
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ fontSize: '12px', color: '#64748B', marginTop: '15px', fontStyle: 'italic' }}>
+              * Haz clic en una fila para ver el listado detallado de ese día y exportar.
+            </p>
+          </div>
+        </div>
+
+        {/* PANEL DERECHO: El Gráfico de Bienestar */}
+        <div className="panel-derecho">
+          <div className="logs-container">
+            <h3 className="logs-titulo">Métrica de Bienestar</h3>
+            
+            <div style={{ height: '250px', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {estado.cargando ? (
+                <p style={{ color: '#64748B' }}>Cargando gráfico...</p>
+              ) : estado.datosBienestar.length === 0 ? (
+                <p style={{ color: '#64748B' }}>No hay datos suficientes para graficar.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={estado.datosBienestar}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60} 
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {estado.datosBienestar.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

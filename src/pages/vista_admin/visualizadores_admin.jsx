@@ -4,17 +4,19 @@ import './visualizadores_admin.css';
 
 export default function ListaVisualizadores() {
   const navigate = useNavigate();
-  const [visualizadores, setVisualizadores] = useState([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [editandoId, setEditandoId] = useState(null); // Guarda el UID del usuario que estamos editando
-  const [datosEdicion, setDatosEdicion] = useState({ nombre: '', email: '', rol: '' });
+  const [visualizadores, setVisualizadores] = useState([]); //guarda los usuarios 
+  const [busqueda, setBusqueda] = useState(''); //barra d busqueda
+  const [editandoId, setEditandoId] = useState(null); // guarda el id del usuario que estamos editando
+  const [datosEdicion, setDatosEdicion] = useState({ nombre: '', email: '', rol: '' }); //temporal para inputs
 
+  //carga la vista al abrir la vista
   useEffect(() => {
     obtenerVisualizadores();
   }, []);
 
   const obtenerVisualizadores = async () => {
     try {
+        //token del login
       const token = localStorage.getItem('token'); 
       // conexion al backend y obtencion de datos
       const respuesta = await fetch('http://localhost:5000/users', {
@@ -24,14 +26,17 @@ export default function ListaVisualizadores() {
           'Authorization': `Bearer ${token}` 
         }
       });
+      //si tdo va bien
       if (!respuesta.ok) throw new Error(`Error: ${respuesta.status}`);
       const dataReales = await respuesta.json();
-      setVisualizadores(dataReales);
+      setVisualizadores(dataReales); //guardamos los usuarios
     } catch (error) {
+    //si error
       console.error("Error con el backend:", error);
     }
   };
 
+  //revisa usuario x usuario para ver que lo q se escriba en "buscar" se muestre
   const visualizadoresFiltrados = visualizadores.filter((visor) => {
     const textoBuscado = busqueda.toLowerCase();
     return (
@@ -40,20 +45,22 @@ export default function ListaVisualizadores() {
     );
   });
 
-  // --- FUNCIONES DE EDICIÓN ---
+  // activa el modo edicion por inputs para no tener q crear otra vista para edicion
   const iniciarEdicion = (visor) => {
     setEditandoId(visor.uid); // transformacion de filas en inputs, esto para no tener q crear pags aparte para editar o eliminar un usuario
     setDatosEdicion({ nombre: visor.nombre, email: visor.email, rol: visor.rol });
   };
 
+  //captura lo q se escribe en los inputs
   const handleChangeEdicion = (e) => {
     setDatosEdicion({ ...datosEdicion, [e.target.name]: e.target.value });
   };
 
+  //manda los cambios al backend
   const guardarEdicion = async (uid) => {
     try {
       const token = localStorage.getItem('token');
-      // ¡Aquí usamos el PUT que hizo tu compañera!
+      // se usa el put del admin
       const respuesta = await fetch(`http://localhost:5000/users/${uid}`, {
         method: 'PUT',
         headers: {
@@ -65,12 +72,12 @@ export default function ListaVisualizadores() {
 
       if (!respuesta.ok) throw new Error("Error al actualizar");
 
-      // Actualizamos la tabla visualmente sin tener que recargar la página
+      // actualizamos la tabla visualmente sin tener que recargar la página
       setVisualizadores(visualizadores.map(visor => 
         visor.uid === uid ? { ...visor, ...datosEdicion } : visor
       ));
       
-      setEditandoId(null); // Cerramos el modo edición
+      setEditandoId(null); // cerramos el modo edición
       alert("¡Usuario actualizado correctamente!");
 
     } catch (error) {
@@ -79,11 +86,13 @@ export default function ListaVisualizadores() {
     }
   };
 
+
+  //se deja como estaba si se cancela
   const cancelarEdicion = () => {
     setEditandoId(null);
   };
 
-  // --- FUNCIONES ACTIVAR/ELIMINAR ---
+  // activar/eliminar
   const handleDesactivar = async (uid) => {
     if (!window.confirm("¿Cambiar el estado de este usuario?")) return;
     try {
@@ -114,6 +123,8 @@ export default function ListaVisualizadores() {
       console.error("Error:", error);
     }
   };
+
+  //todo el diseño
 
   return (
     <div className="contenedor-tabla-admin">
@@ -164,7 +175,6 @@ export default function ListaVisualizadores() {
                         <select name="rol" value={datosEdicion.rol} onChange={handleChangeEdicion} className="input-buscador" style={{ padding: '6px 10px' }}>
                           <option value="visualizador">Visualizador</option>
                           <option value="admin">Administrador</option>
-                          <option value="profesor">Profesor</option>
                         </select>
                       </td>
                       <td><span className="badge-estado activo">Activo</span></td>

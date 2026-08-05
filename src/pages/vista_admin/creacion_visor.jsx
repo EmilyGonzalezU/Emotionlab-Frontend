@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './creacion_visor.css';
 
+//LOS NAVIGATE hacen q cambies d pagina sin necesidad de tener q anotarlo con un a
 export default function CrearVisualizador() {
   const navigate = useNavigate();
+  //esto para q bloquee el boton de crear una vez apretado para evitar q se manden 2 solicitudes
   const [cargando, setCargando] = useState(false);
+  //muestra si fue exitoso o no la creacion del usuario
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
   
+  //se agrupan los datos en un bloque para q cuando se llamen bajo el nombre teacher los traiga
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -14,7 +18,7 @@ export default function CrearVisualizador() {
     rol: 'teacher'
   });
 
-  // Función para capturar lo que escribes en las cajitas
+  // esta funcion permite q el usuario pueda editar en el mismo texto sin necesidad de viajar a otra pagina
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -29,23 +33,25 @@ export default function CrearVisualizador() {
     setMensaje({ tipo: '', texto: '' });
 
     try {
+        //obtenemos el token q se creo cuando el usuario inicia sesion
       const token = localStorage.getItem('token');
       
+        //se conecta con el backend
       const respuesta = await fetch('http://localhost:5000/users', {
-        method: 'POST',
+        method: 'POST', //post pq creamos un usuario nuevo
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json', //lo mandamos en formato json
+          'Authorization': `Bearer ${token}` //confirmamos el token
         },
         body: JSON.stringify(formData)
       });
 
+      //si la respuesta no es buena (un error) asumimos el codigo x defecto
       if (!respuesta.ok) {
-        // Escudo protector: asumimos el código de error por defecto
         let mensajeError = `Error del servidor (Código: ${respuesta.status})`;
         
+        //se intenta leer el json, el catch es para q transformemos el error en algo legible sin q se caiga la pag
         try {
-          // Intentamos leer el JSON, pero si está vacío, el 'catch' nos salva
           const errorData = await respuesta.json();
           if (errorData.error) mensajeError = errorData.error;
         } catch (e) {
@@ -55,10 +61,10 @@ export default function CrearVisualizador() {
         throw new Error(mensajeError);
       }
 
-      // Si el backend responde 201 (Creado)
+      // si el backend responde exitosamente
       setMensaje({ tipo: 'exito', texto: '¡Usuario creado correctamente!' });
       
-      // Esperamos un ratito corto y lo devolvemos a la tabla de visualizadores
+      // dsperamos un ratito corto y se devuelve el usuario a la tabla de visualizadores
       setTimeout(() => {
         navigate('/admin/visualizadores');
       }, 1500);
@@ -66,9 +72,12 @@ export default function CrearVisualizador() {
     } catch (error) {
       setMensaje({ tipo: 'error', texto: error.message });
     } finally {
+        //se apaga el modo cargando del inicio si tira errpr o se va el net o hay problemas
       setCargando(false);
     }
   };
+
+  //todo el diseño
 
   return (
     <div className="contenedor-formulario">

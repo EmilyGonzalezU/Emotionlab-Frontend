@@ -7,8 +7,10 @@ import MenuAdmin from "./pages/vista_admin/menu_admin.jsx"; // la base del menu 
 import HomeAdmin from './pages/vista_admin/home_admin.jsx';
 import ListaVisualizadores from './pages/vista_admin/visualizadores_admin.jsx'; // La tabla
 import CrearVisualizador from './pages/vista_admin/creacion_visor.jsx'; // El formulario
-//import CuentaAdmin from './pages/vista_admin/CuentaAdmin.jsx'; // El perfil
+import CuentaAdmin from './pages/vista_admin/cuenta_admin.jsx'; // El perfil
+import MenuVisor from './pages/vista_visor/menu_visor.jsx';
 import HomeTeacher from './pages/vista_visor/home_visor.jsx';
+import CuentaVisor from './pages/vista_visor/cuenta_visor.jsx';
 
 function App() {
   return (
@@ -27,11 +29,19 @@ function App() {
           {/* las otras opciones del menú del admin */}
           <Route path="visualizadores" element={<ListaVisualizadores />} />
           <Route path="crear-visualizador" element={<CrearVisualizador />} />
-          {/*<Route path="cuenta" element={<CuentaAdmin />} />*/}
+          <Route path="cuenta" element={<CuentaAdmin />} />
         </Route>
 
-        {/* Cuando el rol sea visualizador, lo mandará acá */}
-        <Route path="/teacher" element={<HomeTeacher />} />
+        {/* Cuando el rol sea visualizador, lo mandará acá al menu_visor */}
+        <Route path="/teacher" element={<MenuVisor />}>
+          
+          {/* El index hace que esta sea la primera página al entrar a /teacher */}
+          <Route index element={<HomeTeacher />} />
+          
+          {/* Aquí irán las otras opciones del menú del visor cuando las crees */}
+          {/* <Route path="sesiones" element={<SesionesVisor />} /> */}
+          <Route path="cuenta" element={<CuentaVisor />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
