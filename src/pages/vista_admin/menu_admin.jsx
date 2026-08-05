@@ -6,8 +6,10 @@ export default function MenuAdmin() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate('/');
+    // Esto borra el token viejo (¡y todo lo demás!)
+    localStorage.clear(); 
+    // Te patea a la pantalla de login
+    navigate('/'); 
   };
 
   return (
