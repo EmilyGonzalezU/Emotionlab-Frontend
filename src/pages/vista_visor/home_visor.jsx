@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function HomeTeacher() {
-  // Rescatamos la info del usuario del Login 
+  // Rescatamos la info que se guardo en el login
   const user = JSON.parse(localStorage.getItem('user'));
 
   // Función para cerrar sesión y redireccion al login
