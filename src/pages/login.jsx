@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 1. Agregamos esto
+import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const navigate = useNavigate(); // 2. Iniciamos el hook para navegar
+  const navigate = useNavigate(); 
 
   const handleLogin = async (e) => {
     e.preventDefault();
