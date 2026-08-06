@@ -141,3 +141,46 @@ html, body, #root {
 .form-button:active {
   transform: scale(0.98);
 }
+.password-container{
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-container .form-input{
+    width: 100%;
+    padding-right: 45px;
+}
+
+.toggle-password{
+    position: absolute;
+    right: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+}
+
+.toggle-password:hover{
+    color: #000;
+}
+
+.field-error{
+    display: block;
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.error-message{
+    background: #fdecea;
+    color: #b91c1c;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.toggle-password svg {
+    font-size: 18px;
+}
