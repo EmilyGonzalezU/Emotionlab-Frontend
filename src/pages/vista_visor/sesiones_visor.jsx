@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../../components/Sidebar';
 import './sesiones_visor.css';
 
 const SesionesVisor = () => {
@@ -169,12 +168,7 @@ const SesionesVisor = () => {
   const hayFiltrosActivos = filtroGenero || filtroCurso || fechaDesde || fechaHasta;
 
   return (
-    <div className="layout-pagina-visor">
-      {/* Componente Sidebar Fijo */}
-      <Sidebar />
-
-      {/* Área del Contenido Principal */}
-      <div className="main-content">
+    <div className="sesiones-main-content">
         <header className="sesiones-header">
           <h2>
             {fechaFiltroUrl 
@@ -392,7 +386,6 @@ const SesionesVisor = () => {
             </div>
           )}
         </section>
-      </div>
     </div>
   );
 };

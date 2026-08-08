@@ -30,16 +30,15 @@ export default function HomeTeacher() {
           const gruposFecha = {};
 
           sesiones.forEach(sesion => {
-            // Lógica Bienestar Corregida para atrapar los "null" y leer la IA
+            // Lógica Bienestar para atrapar los "null" y leer la IA
             if (sesion.bienestar === null || sesion.bienestar === undefined || sesion.bienestar === '') {
               contadorPendiente++;
             } else {
               const bienestar = String(sesion.bienestar).toLowerCase();
-              // ¡Aquí está la magia! Ahora acepta "alto bienestar"
               if (bienestar === 'sí' || bienestar === 'si' || bienestar === 'true' || bienestar === 'alto bienestar') {
                 contadorSi++;
               } else {
-                contadorNo++; // Todo lo demás (incluyendo "bajo bienestar") se va acá
+                contadorNo++;
               }
             }
 
@@ -51,11 +50,11 @@ export default function HomeTeacher() {
             }
           });
 
-          // Formatear para el gráfico con los nombres actualizados de la IA
+          // Formatear para el gráfico
           const datosPie = [
-            { name: 'Alto Bienestar', value: contadorSi, color: '#22C55E' }, // Verde éxito
-            { name: 'Bajo Bienestar', value: contadorNo, color: '#EF4444' }, // Rojo error
-            { name: 'IA Evaluando', value: contadorPendiente, color: '#F59E0B' } // Amarillo cargando
+            { name: 'Alto Bienestar', value: contadorSi, color: '#22C55E' },
+            { name: 'Bajo Bienestar', value: contadorNo, color: '#EF4444' },
+            { name: 'IA Evaluando', value: contadorPendiente, color: '#F59E0B' }
           ].filter(item => item.value > 0);
 
           // Formatear para la tabla
@@ -81,9 +80,10 @@ export default function HomeTeacher() {
 
   // Función para cuando hagan clic en una fila de la tabla
   const irADetalleDia = (fecha) => {
-    // Reemplazamos los slashes si es que la fecha los trae, por guiones para la URL
+    // Convierte slashes "08/08/2026" a guiones "08-08-2026"
     const fechaUrl = fecha.replaceAll('/', '-'); 
-    navigate(`/sesiones/${fechaUrl}`);
+    // Redirige a la vista de sesiones filtrando por el parámetro de consulta ?fecha=
+    navigate(`/teacher/sesiones?fecha=${fechaUrl}`);
   };
 
   return (
@@ -121,7 +121,7 @@ export default function HomeTeacher() {
                       <tr 
                         key={index} 
                         onClick={() => irADetalleDia(item.fecha)}
-                        style={{ cursor: 'pointer' }} // El cursor de "manito" avisa que es clickeable
+                        style={{ cursor: 'pointer' }}
                       >
                         <td style={{ fontWeight: 'bold', color: '#17315E' }}>{item.fecha}</td>
                         <td>

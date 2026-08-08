@@ -1,144 +1,287 @@
 /* --- CONTENEDOR PRINCIPAL --- */
+
 /* Limita el ancho para que el formulario no se estire por toda la pantalla en monitores grandes.
+
    El 'margin: 0 auto' es el truco mágico para centrarlo horizontalmente. */
+
 .contenedor-formulario {
+
   max-width: 600px;
+
   margin: 0 auto;
+
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
   color: #1E293B;
+
 }
+
+
 
 /* --- CABECERA (Botón Volver + Título) --- */
+
 /* Usamos Flexbox para poner el botón y el título en la misma línea (uno al lado del otro),
+
    alineados perfectamente al centro con un espacio (gap) de 20px entre ellos. */
+
 .cabecera-form {
+
   display: flex;
+
   align-items: center;
+
   gap: 20px;
+
   margin-bottom: 25px;
+
 }
+
+
 
 .cabecera-form h2 {
+
   margin: 0;
+
   color: #17315E; /* Tu Azul Marino oficial */
+
   font-size: 24px;
+
   font-weight: 600;
+
 }
 
-/* El botón de volver está "desnudado": le quitamos el fondo y el borde feo 
+
+
+/* El botón de volver está "desnudado": le quitamos el fondo y el borde feo
+
    que traen los botones por defecto para que parezca un enlace elegante. */
+
 .btn-volver {
+
   background: none;
+
   border: none;
+
   color: #64748B;
+
   font-size: 15px;
+
   font-weight: 600;
+
   cursor: pointer;
+
   padding: 8px 12px;
+
   border-radius: 6px;
+
   transition: all 0.2s; /* Hace que el cambio de color al pasar el mouse sea suavecito */
+
 }
+
+
 
 /* Efecto al pasar el mouse por encima del botón Volver */
+
 .btn-volver:hover {
+
   background-color: #E2E8F0;
+
   color: #1E293B;
+
 }
+
+
 
 /* --- LA TARJETA BLANCA DEL FORMULARIO --- */
-/* Le da ese aspecto de "flotar" sobre el fondo gracias a la sombra (box-shadow) 
+
+/* Le da ese aspecto de "flotar" sobre el fondo gracias a la sombra (box-shadow)
+
    y los bordes redondeados (border-radius). */
+
 .tarjeta-form {
+
   background-color: #FFFFFF;
+
   padding: 30px;
+
   border-radius: 12px;
+
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
 }
+
+
 
 /* --- LOS CAMPOS DE TEXTO (Inputs) --- */
+
 /* Flex-direction: column hace que el título (label) quede arriba de la cajita de texto (input). */
+
 .grupo-input {
+
   margin-bottom: 20px;
+
   display: flex;
+
   flex-direction: column;
+
 }
+
+
 
 .grupo-input label {
+
   font-size: 14px;
+
   font-weight: 600;
+
   color: #1E293B;
+
   margin-bottom: 8px;
+
 }
+
+
 
 /* Estilos compartidos tanto para las cajitas de texto como para el selector de Rol */
-.grupo-input input, 
+
+.grupo-input input,
+
 .grupo-input select {
+
   padding: 12px 16px;
+
   border: 1px solid #CBD5E1;
+
   border-radius: 8px;
+
   font-size: 15px;
+
   color: #1E293B;
+
   background-color: #FFFFFF;
+
   outline: none; /* Quita el borde negro feo que pone el navegador al hacer clic */
+
   transition: border-color 0.3s;
+
 }
+
+
 
 /* Pseudo-clase :focus -> Se activa SOLO cuando el usuario hace clic dentro de la cajita.
+
    Se pinta el borde azul para avisarle visualmente dónde está escribiendo. */
-.grupo-input input:focus, 
+
+.grupo-input input:focus,
+
 .grupo-input select:focus {
+
   border-color: #3B82F6;
+
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+
 }
+
+
 
 /* --- BOTÓN DE GUARDAR --- */
+
 .btn-guardar {
+
   width: 100%; /* Ocupa todo el ancho disponible de la tarjeta */
+
   padding: 14px;
+
   background-color: #17315E; /* Azul Marino oficial */
+
   color: #FFFFFF;
+
   border: none;
+
   border-radius: 8px;
+
   font-size: 16px;
+
   font-weight: 600;
+
   cursor: pointer;
+
   transition: all 0.3s ease;
+
   margin-top: 10px;
+
   box-shadow: 0 4px 6px rgba(23, 49, 94, 0.2);
+
 }
 
-/* :not(:disabled) asegura que el botón SOLO cambie a un azul más oscuro al pasar el mouse 
+
+
+/* :not(:disabled) asegura que el botón SOLO cambie a un azul más oscuro al pasar el mouse
+
    SI es que está habilitado. Si está bloqueado, no hace este efecto. */
+
 .btn-guardar:hover:not(:disabled) {
+
   background-color: #102548;
+
 }
 
-/* Pseudo-clase :disabled -> Se activa cuando React pone 'cargando: true'. 
+
+
+/* Pseudo-clase :disabled -> Se activa cuando React pone 'cargando: true'.
+
    Se pone gris y el cursor cambia al símbolo de "prohibido" (not-allowed). */
+
 .btn-guardar:disabled {
+
   background-color: #94A3B8;
+
   cursor: not-allowed;
+
 }
+
+
 
 /* --- BANNERS DE MENSAJES (Alertas) --- */
+
 .alerta {
+
   padding: 15px;
+
   border-radius: 8px;
+
   margin-bottom: 20px;
+
   font-weight: 500;
+
   text-align: center;
+
 }
+
+
 
 /* Variante de éxito (Verde) */
+
 .alerta.exito {
+
   background-color: #DCFCE7;
+
   color: #22C55E;
+
   border: 1px solid #22C55E;
+
 }
 
+
+
 /* Variante de error (Rojo) */
+
 .alerta.error {
+
   background-color: #FEE2E2;
+
   color: #EF4444;
+
   border: 1px solid #EF4444;
+
 }

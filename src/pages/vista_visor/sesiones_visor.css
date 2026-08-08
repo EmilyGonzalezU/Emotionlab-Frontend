@@ -1,9 +1,7 @@
-/* Contenedor principal con margen izquierdo para no tapar el sidebar */
-.main-content {
-  margin-left: 240px; /* Ancho idéntico al sidebar */
-  padding: 40px;
+/* El layout de visor ya reserva el espacio del sidebar compartido. */
+.sesiones-main-content {
   max-width: 1100px;
-  width: calc(100% - 240px);
+  width: 100%;
   box-sizing: border-box;
 }
 
