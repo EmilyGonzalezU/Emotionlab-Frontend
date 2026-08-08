@@ -1,0 +1,108 @@
+/* Layout Global con Sidebar Flotante */
+.layout-pagina-visor {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f8fafc;
+}
+
+.main-content {
+  margin-left: 240px; /* Ancho exacto del Sidebar flotante */
+  flex: 1;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* Contenedor Principal del Home */
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1.8fr 1.2fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Paneles y Tarjetas */
+.panel-izquierdo,
+.panel-derecho {
+  width: 100%;
+}
+
+.logs-container {
+  background-color: #ffffff;
+  border: 2px solid #000000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.logs-titulo {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #17315e;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+/* Estilos de la Tabla de Sesiones */
+.tabla-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tabla-logs {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.tabla-logs th {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.tabla-logs td {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+  transition: background-color 0.15s ease;
+}
+
+.tabla-logs tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
+.badge-estado {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-estado.listo {
+  background-color: #eaf2ff;
+  color: #17315e;
+}
+
+.texto-centrado {
+  text-align: center;
+  color: #64748b;
+  padding: 20px;
+}
+
+/* Responsividad para pantallas medianas */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
