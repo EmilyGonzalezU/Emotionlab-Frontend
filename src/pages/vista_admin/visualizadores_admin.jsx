@@ -1,28 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import "./visualizadores_admin.css";
 
 export default function ListaVisualizadores() {
   const navigate = useNavigate();
-  const [visualizadores, setVisualizadores] = useState([]); //guarda los usuarios
-  const [busqueda, setBusqueda] = useState(""); //barra d busqueda
-  const [editandoId, setEditandoId] = useState(null); // guarda el id del usuario que estamos editando
+  const mountedRef = useRef(false);
+  const fetchingRef = useRef(false);
+
+  const [visualizadores, setVisualizadores] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [editandoId, setEditandoId] = useState(null);
   const [datosEdicion, setDatosEdicion] = useState({
     nombre: "",
     email: "",
     rol: "",
-  }); //temporal para inputs
+  });
+  const [cargandoLista, setCargandoLista] = useState(true);
 
-  //carga la vista al abrir la vista
-  useEffect(() => {
-    obtenerVisualizadores();
-  }, []);
-
-  const obtenerVisualizadores = async () => {
+  const obtenerVisualizadores = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
-      //token del login
+      setCargandoLista(true);
       const token = localStorage.getItem("token");
-      // conexion al backend y obtencion de datos
       const respuesta = await fetch("http://localhost:5000/users", {
         method: "GET",
         headers: {
@@ -30,49 +31,48 @@ export default function ListaVisualizadores() {
           Authorization: `Bearer ${token}`,
         },
       });
-      //si todo va bien
       if (!respuesta.ok) throw new Error(`Error: ${respuesta.status}`);
       const dataReales = await respuesta.json();
-
-      // === CAMBIO 1: Mostrar datos en consola ===
-      console.table(dataReales);
-
-      setVisualizadores(dataReales); //guardamos los usuarios
+      setVisualizadores(dataReales || []);
     } catch (error) {
-      //si error
       console.error("Error con el backend:", error);
+      toast.error("No se pudo cargar la lista de usuarios.");
+    } finally {
+      setCargandoLista(false);
+      fetchingRef.current = false;
     }
-  };
+  }, []);
 
-  //revisa usuario x usuario para ver que lo q se escriba en "buscar" se muestre
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    obtenerVisualizadores();
+  }, [obtenerVisualizadores]);
+
   const visualizadoresFiltrados = visualizadores.filter((visor) => {
     const textoBuscado = busqueda.toLowerCase();
     return (
-      visor.nombre?.toLowerCase().includes(textoBuscado) ||
-      visor.email?.toLowerCase().includes(textoBuscado)
+      (visor.nombre || "").toLowerCase().includes(textoBuscado) ||
+      (visor.email || "").toLowerCase().includes(textoBuscado)
     );
   });
 
-  // activa el modo edicion por inputs para no tener q crear otra vista para edicion
   const iniciarEdicion = (visor) => {
-    setEditandoId(visor.uid); // transformacion de filas en inputs, esto para no tener q crear pags aparte para editar o eliminar un usuario
+    setEditandoId(visor.uid);
     setDatosEdicion({
-      nombre: visor.nombre,
-      email: visor.email,
-      rol: visor.rol,
+      nombre: visor.nombre || "",
+      email: visor.email || "",
+      rol: visor.rol || "",
     });
   };
 
-  //captura lo q se escribe en los inputs
   const handleChangeEdicion = (e) => {
-    setDatosEdicion({ ...datosEdicion, [e.target.name]: e.target.value });
+    setDatosEdicion((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  //manda los cambios al backend
   const guardarEdicion = async (uid) => {
     try {
       const token = localStorage.getItem("token");
-      // se usa el put del admin
       const respuesta = await fetch(`http://localhost:5000/users/${uid}`, {
         method: "PUT",
         headers: {
@@ -81,32 +81,41 @@ export default function ListaVisualizadores() {
         },
         body: JSON.stringify(datosEdicion),
       });
-
-      if (!respuesta.ok) throw new Error("Error al actualizar");
-
-      // actualizamos la tabla visualmente sin tener que recargar la página
-      setVisualizadores(
-        visualizadores.map((visor) =>
-          visor.uid === uid ? { ...visor, ...datosEdicion } : visor,
+      if (!respuesta.ok) {
+        let msg = "Error al actualizar";
+        try {
+          const err = await respuesta.json();
+          if (err && err.error) msg = err.error;
+        } catch (_) { /* noop */ }
+        throw new Error(msg);
+      }
+      setVisualizadores((prev) =>
+        prev.map((visor) =>
+          visor.uid === uid
+            ? {
+                ...visor,
+                nombre: datosEdicion.nombre ?? visor.nombre,
+                email: datosEdicion.email ?? visor.email,
+                rol: datosEdicion.rol ?? visor.rol,
+              }
+            : visor,
         ),
       );
-
-      setEditandoId(null); // cerramos el modo edición
-      alert("¡Usuario actualizado correctamente!");
+      setEditandoId(null);
+      toast.success("¡Usuario actualizado correctamente!");
     } catch (error) {
       console.error("Error:", error);
-      alert("Hubo un problema al guardar los cambios.");
+      toast.error(error.message || "Hubo un problema al guardar los cambios.");
     }
   };
 
-  //se deja como estaba si se cancela
   const cancelarEdicion = () => {
     setEditandoId(null);
   };
 
-  // === CAMBIO 5: Función para desactivar (actualizada) ===
   const handleDesactivar = async (uid) => {
-    if (!window.confirm("¿Desea desactivar este usuario?")) return;
+    const ok = window.confirm("¿Desea desactivar este usuario?");
+    if (!ok) return;
     try {
       const token = localStorage.getItem("token");
       const respuesta = await fetch(
@@ -119,26 +128,22 @@ export default function ListaVisualizadores() {
           },
         },
       );
-
       if (!respuesta.ok) throw new Error("Error al desactivar");
-
-      // === CAMBIO 4: Recargar datos después de desactivar ===
-      await obtenerVisualizadores();
-
-      alert("¡Usuario desactivado con éxito!");
+      setVisualizadores((prev) =>
+        prev.map((v) => (v.uid === uid ? { ...v, activo: false } : v)),
+      );
+      toast.success("¡Usuario desactivado con éxito!");
     } catch (error) {
       console.error("Error:", error);
-      alert("No fue posible desactivar el usuario.");
+      toast.error("No fue posible desactivar el usuario.");
     }
   };
 
-  // === CAMBIO 5: Función para activar (nueva) ===
   const handleActivar = async (uid) => {
-    if (!window.confirm("¿Desea activar este usuario?")) return;
-
+    const ok = window.confirm("¿Desea activar este usuario?");
+    if (!ok) return;
     try {
       const token = localStorage.getItem("token");
-
       const respuesta = await fetch(
         `http://localhost:5000/users/${uid}/enable`,
         {
@@ -149,23 +154,22 @@ export default function ListaVisualizadores() {
           },
         },
       );
-
       if (!respuesta.ok) {
         throw new Error("Error al activar");
       }
-
-      await obtenerVisualizadores();
-
-      alert("Usuario activado correctamente.");
+      setVisualizadores((prev) =>
+        prev.map((v) => (v.uid === uid ? { ...v, activo: true } : v)),
+      );
+      toast.success("Usuario activado correctamente.");
     } catch (error) {
       console.error(error);
-      alert("No fue posible activar el usuario.");
+      toast.error("No fue posible activar el usuario.");
     }
   };
 
   const handleEliminar = async (uid) => {
-    if (!window.confirm("¡ALERTA! ¿Eliminar a este usuario para siempre?"))
-      return;
+    const ok = window.confirm("¡ALERTA! ¿Eliminar a este usuario para siempre?");
+    if (!ok) return;
     try {
       const token = localStorage.getItem("token");
       const respuesta = await fetch(`http://localhost:5000/users/${uid}`, {
@@ -176,16 +180,14 @@ export default function ListaVisualizadores() {
         },
       });
       if (!respuesta.ok) throw new Error("Error al eliminar");
-
-      setVisualizadores(visualizadores.filter((visor) => visor.uid !== uid));
-      alert("Usuario eliminado correctamente.");
+      setVisualizadores((prev) => prev.filter((visor) => visor.uid !== uid));
+      toast.success("Usuario eliminado correctamente.");
     } catch (error) {
       console.error("Error:", error);
-      alert("No fue posible eliminar el usuario.");
+      toast.error("No fue posible eliminar el usuario.");
     }
   };
 
-  //todo el diseño
   return (
     <div className="contenedor-tabla-admin">
       <div className="cabecera-tabla">
@@ -219,13 +221,17 @@ export default function ListaVisualizadores() {
             </tr>
           </thead>
           <tbody>
-            {visualizadoresFiltrados.length > 0 ? (
+            {cargandoLista ? (
+              <tr>
+                <td colSpan="5" className="tabla-vacia">
+                  Cargando usuarios...
+                </td>
+              </tr>
+            ) : visualizadoresFiltrados.length > 0 ? (
               visualizadoresFiltrados.map((visor, index) => (
                 <tr key={visor.uid || index}>
-                  {/* LA MAGIA SUCEDE AQUÍ: ¿Estamos editando esta fila? */}
                   {editandoId === visor.uid ? (
                     <>
-                      {/* MODO EDICIÓN */}
                       <td>
                         <input
                           name="nombre"
@@ -251,11 +257,10 @@ export default function ListaVisualizadores() {
                           onChange={handleChangeEdicion}
                           className="input-buscador"
                           style={{ padding: "6px 10px" }}>
-                          <option value="visualizador">Visualizador</option>
+                          <option value="teacher">Visualizador</option>
                           <option value="admin">Administrador</option>
                         </select>
                       </td>
-                      {/* === CAMBIO 3: Estado en modo edición === */}
                       <td>
                         <span
                           className={`badge-estado ${
@@ -281,13 +286,11 @@ export default function ListaVisualizadores() {
                     </>
                   ) : (
                     <>
-                      {/* MODO LECTURA NORMAL */}
                       <td className="fw-bold">{visor.nombre}</td>
                       <td>{visor.email}</td>
                       <td>
                         <span className="badge-rol">{visor.rol}</span>
                       </td>
-                      {/* === CAMBIO 2: Estado en modo lectura === */}
                       <td>
                         <span
                           className={`badge-estado ${
@@ -296,7 +299,6 @@ export default function ListaVisualizadores() {
                           {visor.activo === true ? "Activo" : "Inactivo"}
                         </span>
                       </td>
-                      {/* === CAMBIO 6: Botones de acción condicionales === */}
                       <td className="celda-acciones">
                         <button
                           className="btn-accion btn-editar"
@@ -347,3 +349,4 @@ export default function ListaVisualizadores() {
     </div>
   );
 }
+

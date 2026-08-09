@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   PieChart,
@@ -11,92 +11,96 @@ import {
 
 export default function HomeTeacher() {
   const navigate = useNavigate();
+  const mountedRef = useRef(false);
+  const fetchingRef = useRef(false);
   const [estado, setEstado] = useState({
     cargando: true,
     datosBienestar: [],
     sesionesPorDia: [],
   });
 
-  useEffect(() => {
-    const obtenerDatos = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const respuesta = await fetch("http://localhost:5000/sessions", {
-          headers: { Authorization: `Bearer ${token}` },
+  const obtenerDatos = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+    try {
+      const token = localStorage.getItem("token");
+      const respuesta = await fetch("http://localhost:5000/sessions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (respuesta.ok) {
+        const sesiones = await respuesta.json();
+
+        let contadorSi = 0;
+        let contadorNo = 0;
+        let contadorPendiente = 0;
+
+        const gruposFecha = {};
+
+        sesiones.forEach((sesion) => {
+          if (
+            sesion.bienestar === null ||
+            sesion.bienestar === undefined ||
+            sesion.bienestar === ""
+          ) {
+            contadorPendiente++;
+          } else {
+            const bienestar = String(sesion.bienestar).toLowerCase();
+            if (
+              bienestar === "sí" ||
+              bienestar === "si" ||
+              bienestar === "true" ||
+              bienestar === "alto bienestar"
+            ) {
+              contadorSi++;
+            } else {
+              contadorNo++;
+            }
+          }
+
+          const fechaRaw = sesion.updated_at || sesion.created_at;
+          if (fechaRaw) {
+            const fechaStr = new Date(fechaRaw).toLocaleDateString("es-CL");
+            gruposFecha[fechaStr] = (gruposFecha[fechaStr] || 0) + 1;
+          }
         });
 
-        if (respuesta.ok) {
-          const sesiones = await respuesta.json();
+        const datosPie = [
+          { name: "Alto Bienestar", value: contadorSi, color: "#22C55E" },
+          { name: "Bajo Bienestar", value: contadorNo, color: "#EF4444" },
+          {
+            name: "IA Evaluando",
+            value: contadorPendiente,
+            color: "#F59E0B",
+          },
+        ].filter((item) => item.value > 0);
 
-          // --- 1. PROCESAR BIENESTAR (Alto vs Bajo vs Pendiente) ---
-          let contadorSi = 0;
-          let contadorNo = 0;
-          let contadorPendiente = 0;
+        const datosTabla = Object.keys(gruposFecha).map((fecha) => ({
+          fecha: fecha,
+          total: gruposFecha[fecha],
+        }));
 
-          // --- 2. AGRUPAR POR FECHA ---
-          const gruposFecha = {};
-
-          sesiones.forEach((sesion) => {
-            // Lógica Bienestar para atrapar los "null" y leer la IA
-            if (
-              sesion.bienestar === null ||
-              sesion.bienestar === undefined ||
-              sesion.bienestar === ""
-            ) {
-              contadorPendiente++;
-            } else {
-              const bienestar = String(sesion.bienestar).toLowerCase();
-              if (
-                bienestar === "sí" ||
-                bienestar === "si" ||
-                bienestar === "true" ||
-                bienestar === "alto bienestar"
-              ) {
-                contadorSi++;
-              } else {
-                contadorNo++;
-              }
-            }
-
-            // Lógica Fecha
-            const fechaRaw = sesion.updated_at || sesion.created_at;
-            if (fechaRaw) {
-              const fechaStr = new Date(fechaRaw).toLocaleDateString("es-CL");
-              gruposFecha[fechaStr] = (gruposFecha[fechaStr] || 0) + 1;
-            }
-          });
-
-          // Formatear para el gráfico
-          const datosPie = [
-            { name: "Alto Bienestar", value: contadorSi, color: "#22C55E" },
-            { name: "Bajo Bienestar", value: contadorNo, color: "#EF4444" },
-            {
-              name: "IA Evaluando",
-              value: contadorPendiente,
-              color: "#F59E0B",
-            },
-          ].filter((item) => item.value > 0);
-
-          // Formatear para la tabla
-          const datosTabla = Object.keys(gruposFecha).map((fecha) => ({
-            fecha: fecha,
-            total: gruposFecha[fecha],
-          }));
-
-          setEstado({
-            cargando: false,
-            datosBienestar: datosPie,
-            sesionesPorDia: datosTabla,
-          });
-        }
-      } catch (error) {
-        console.error("Error cargando datos", error);
+        setEstado({
+          cargando: false,
+          datosBienestar: datosPie,
+          sesionesPorDia: datosTabla,
+        });
+      } else {
         setEstado((prev) => ({ ...prev, cargando: false }));
       }
-    };
-
-    obtenerDatos();
+    } catch (error) {
+      console.error("Error cargando datos", error);
+      setEstado((prev) => ({ ...prev, cargando: false }));
+    } finally {
+      fetchingRef.current = false;
+    }
   }, []);
+
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    obtenerDatos();
+  }, [obtenerDatos]);
 
   // Función para cuando hagan clic en una fila de la tabla
   const irADetalleDia = (fecha) => {

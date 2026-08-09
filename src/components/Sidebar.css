@@ -62,9 +62,9 @@
 .btn-cerrar-sesion {
   width: 100%;
   padding: 10px;
-  background-color: transparent;
-  color: #ef4444;
-  border: 1px solid #ef4444;
+  background-color: #17315e;
+  color: #ffffff;
+  border: 1px solid #ffffff;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;

@@ -1,8 +1,8 @@
 .contenedor-formulario {
   max-width: 600px;
   margin: 0 auto;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color: #1E293B;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1e293b;
 }
 
 .cabecera-form {
@@ -14,7 +14,7 @@
 
 .cabecera-form h2 {
   margin: 0;
-  color: #17315E;
+  color: #17315e;
   font-size: 24px;
   font-weight: 600;
 }
@@ -22,7 +22,7 @@
 .btn-volver {
   background: none;
   border: none;
-  color: #64748B;
+  color: #64748b;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -32,12 +32,12 @@
 }
 
 .btn-volver:hover {
-  background-color: #E2E8F0;
-  color: #1E293B;
+  background-color: #e2e8f0;
+  color: #1e293b;
 }
 
 .tarjeta-form {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
@@ -52,25 +52,25 @@
 .grupo-input label {
   font-size: 14px;
   font-weight: 600;
-  color: #1E293B;
+  color: #1e293b;
   margin-bottom: 8px;
 }
 
-.grupo-input input, 
+.grupo-input input,
 .grupo-input select {
   padding: 12px 16px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 15px;
-  color: #1E293B;
-  background-color: #FFFFFF;
+  color: #1e293b;
+  background-color: #ffffff;
   outline: none;
   transition: border-color 0.3s;
 }
 
-.grupo-input input:focus, 
+.grupo-input input:focus,
 .grupo-input select:focus {
-  border-color: #3B82F6;
+  border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -90,22 +90,15 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #64748B;
+  color: #64748b;
   font-size: 18px;
-}
-
-.field-error {
-  display: block;
-  margin-top: 6px;
-  color: #DC2626;
-  font-size: 13px;
 }
 
 .btn-guardar {
   width: 100%;
   padding: 14px;
-  background-color: #17315E;
-  color: #FFFFFF;
+  background-color: #17315e;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 16px;
@@ -121,26 +114,6 @@
 }
 
 .btn-guardar:disabled {
-  background-color: #94A3B8;
+  background-color: #94a3b8;
   cursor: not-allowed;
-}
-
-.alerta {
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-weight: 500;
-  text-align: center;
-}
-
-.alerta.exito {
-  background-color: #DCFCE7;
-  color: #22C55E;
-  border: 1px solid #22C55E;
-}
-
-.alerta.error {
-  background-color: #FEE2E2;
-  color: #EF4444;
-  border: 1px solid #EF4444;
 }

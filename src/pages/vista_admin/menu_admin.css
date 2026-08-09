@@ -4,6 +4,13 @@
   min-height: 100vh;
 }
 
+.admin-main-content {
+  margin-left: 240px; /* Esto empuja el contenido */
+  width: calc(100% - 240px);
+  padding: 32px;
+  box-sizing: border-box;
+}
+
 /* Barra lateral (Sidebar) un pelín más delgada */
 .admin-sidebar {
   width: 230px; /* Adelgazamos la barra un poco */

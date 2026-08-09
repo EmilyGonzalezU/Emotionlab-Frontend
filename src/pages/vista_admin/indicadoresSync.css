@@ -1,9 +1,9 @@
 /* =========================================
-   indicadores.css (Versión Compacta y Profesional)
+   indicadoresSync.css (Versión Mejorada con Toasts)
    ========================================= */
 
 .sync-dashboard {
-  padding: 0; /* Quitamos padding extra arriba */
+  padding: 0;
   font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: #1e293b;
 }
@@ -11,18 +11,18 @@
 /* Título principal más compacto */
 .sync-titulo {
   color: #17315e !important;
-  font-size: 20px; /* Era 24px */
+  font-size: 20px;
   font-weight: 600;
-  margin-bottom: 15px; /* Reducido */
+  margin-bottom: 15px;
   border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 10px; /* Reducido */
+  padding-bottom: 10px;
 }
 
 /* --- LAYOUT --- */
 .dashboard-layout {
   display: flex;
   flex-direction: row;
-  gap: 20px; /* Un poco menos de separación entre izquierda y derecha */
+  gap: 20px;
   align-items: flex-start;
 }
 
@@ -35,14 +35,14 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Tarjetas más juntas */
+  gap: 15px;
 }
 
-/* --- TARJETAS (Dieta aplicada) --- */
+/* --- TARJETAS --- */
 .sync-card {
   background-color: #ffffff;
   border-radius: 10px;
-  padding: 16px 20px; /* Reducimos el tremendo padding de 24px */
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -58,11 +58,11 @@
 
 /* Íconos más pequeños y sutiles */
 .card-icono {
-  font-size: 24px; /* Era 32px */
+  font-size: 24px;
   background-color: #eaf2ff;
   color: #17315e;
-  width: 48px; /* Era 65px */
-  height: 48px; /* Era 65px */
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,7 +71,7 @@
 
 .card-info h3 {
   margin: 0 0 3px 0;
-  font-size: 11px; /* Letra de subtítulo más delicada */
+  font-size: 11px;
   color: #64748b !important;
   text-transform: uppercase;
   font-weight: 600;
@@ -80,7 +80,7 @@
 
 .card-info p {
   margin: 0;
-  font-size: 18px; /* Era 26px (por eso la fecha se veía gigante) */
+  font-size: 18px;
   font-weight: 700;
   color: #1e293b !important;
 }
@@ -89,7 +89,7 @@
 .logs-container {
   background-color: #ffffff;
   border-radius: 10px;
-  padding: 20px; /* Bajamos de 30px a 20px para ahorrar espacio */
+  padding: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
@@ -97,11 +97,11 @@
   color: #17315e !important;
   margin-top: 0;
   margin-bottom: 15px;
-  font-size: 16px; /* Título de tabla más recatado */
+  font-size: 16px;
   font-weight: 600;
 }
 
-/* --- TABLA (Filas más delgadas) --- */
+/* --- TABLA --- */
 .tabla-responsive {
   overflow-x: auto;
 }
@@ -118,7 +118,7 @@
 }
 
 .tabla-logs th {
-  padding: 10px 12px; /* Reducimos el relleno de cabeceras */
+  padding: 10px 12px;
   color: #64748b;
   font-weight: 600;
   font-size: 12px;
@@ -127,9 +127,9 @@
 }
 
 .tabla-logs td {
-  padding: 10px 12px; /* Filas mucho más delgadas */
+  padding: 10px 12px;
   color: #1e293b !important;
-  font-size: 13px; /* Letra un puntito más chica para los datos */
+  font-size: 13px;
   border-bottom: 1px solid #e2e8f0;
   transition: background-color 0.2s ease;
 }
@@ -138,7 +138,7 @@
   background-color: #eaf2ff;
 }
 
-/* TRUCO: Evitamos que la primera columna (Fecha/Hora) se corte en dos líneas */
+/* TRUCO: Evitamos que la primera columna se corte en dos líneas */
 .tabla-logs td:first-child {
   white-space: nowrap;
 }
@@ -182,9 +182,9 @@
   background: #f8fafc;
 }
 
-/* --- BADGES (Etiquetas de estado más compactas) --- */
+/* --- BADGES (Etiquetas de estado) --- */
 .badge-estado {
-  padding: 4px 10px; /* Etiqueta menos "gorda" */
+  padding: 4px 10px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: 600;
@@ -199,6 +199,400 @@
 .badge-estado.listo {
   background-color: #dcfce7;
   color: #22c55e !important;
+}
+
+.badge-rol {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --- BOTONES DE ACCIÓN PARA TOASTS --- */
+.btn-toast-azul {
+  background-color: #17315e;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-toast-azul:hover {
+  background-color: #102548;
+}
+
+.btn-toast-rojo {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-toast-rojo:hover {
+  background-color: #dc2626;
+}
+
+.btn-toast-gris {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-toast-gris:hover {
+  background-color: #5a6268;
+}
+
+/* --- BOTONES DE ACCIÓN EN TABLA --- */
+.btn-accion {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
+}
+
+.btn-accion:hover {
+  transform: scale(1.1);
+}
+
+.btn-editar:hover {
+  background-color: #eaf2ff;
+}
+
+.btn-desactivar:hover {
+  background-color: #fef3c7;
+  color: #f59e0b;
+}
+
+.btn-eliminar:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+/* --- MENSAJE DE TABLA VACÍA --- */
+.tabla-vacia {
+  text-align: center;
+  padding: 40px !important;
+  color: #64748b !important;
+  font-style: italic;
+}
+
+/* --- RESPONSIVO --- */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    flex-direction: column-reverse;
+  }
+  .panel-izquierdo,
+  .panel-derecho {
+    width: 100%;
+  }
+} /* =========================================
+   indicadoresSync.css (Versión Mejorada con Toasts)
+   ========================================= */
+
+.sync-dashboard {
+  padding: 0;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1e293b;
+}
+
+/* Título principal más compacto */
+.sync-titulo {
+  color: #17315e !important;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+/* --- LAYOUT --- */
+.dashboard-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.panel-izquierdo {
+  flex: 2;
+  min-width: 0;
+}
+
+.panel-derecho {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* --- TARJETAS --- */
+.sync-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.sync-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(23, 49, 94, 0.1);
+}
+
+/* Íconos más pequeños y sutiles */
+.card-icono {
+  font-size: 24px;
+  background-color: #eaf2ff;
+  color: #17315e;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.card-info h3 {
+  margin: 0 0 3px 0;
+  font-size: 11px;
+  color: #64748b !important;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.card-info p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b !important;
+}
+
+/* --- CONTENEDOR DE LA TABLA --- */
+.logs-container {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.logs-titulo {
+  color: #17315e !important;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* --- TABLA --- */
+.tabla-responsive {
+  overflow-x: auto;
+}
+
+.tabla-logs {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tabla-logs thead tr {
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tabla-logs th {
+  padding: 10px 12px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabla-logs td {
+  padding: 10px 12px;
+  color: #1e293b !important;
+  font-size: 13px;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.tabla-logs tbody tr:hover td {
+  background-color: #eaf2ff;
+}
+
+/* TRUCO: Evitamos que la primera columna se corte en dos líneas */
+.tabla-logs td:first-child {
+  white-space: nowrap;
+}
+
+.id-celda {
+  font-family: monospace;
+  color: #64748b !important;
+  word-break: break-all;
+  max-width: 150px;
+  line-height: 1.3;
+}
+
+.texto-centrado {
+  text-align: center;
+  color: #64748b !important;
+  font-style: italic;
+  padding: 20px !important;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.activity-table th {
+  background: #f8fafc;
+  color: #475569;
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.activity-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.activity-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* --- BADGES (Etiquetas de estado) --- */
+.badge-estado {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-estado.pendiente {
+  background-color: #fef3c7;
+  color: #f59e0b !important;
+}
+
+.badge-estado.listo {
+  background-color: #dcfce7;
+  color: #22c55e !important;
+}
+
+.badge-rol {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --- BOTONES DE ACCIÓN PARA TOASTS --- */
+.btn-toast-azul {
+  background-color: #17315e;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-toast-azul:hover {
+  background-color: #102548;
+}
+
+.btn-toast-rojo {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-toast-rojo:hover {
+  background-color: #dc2626;
+}
+
+.btn-toast-gris {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-toast-gris:hover {
+  background-color: #5a6268;
+}
+
+/* --- BOTONES DE ACCIÓN EN TABLA --- */
+.btn-accion {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
+}
+
+.btn-accion:hover {
+  transform: scale(1.1);
+}
+
+.btn-editar:hover {
+  background-color: #eaf2ff;
+}
+
+.btn-desactivar:hover {
+  background-color: #fef3c7;
+  color: #f59e0b;
+}
+
+.btn-eliminar:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+/* --- MENSAJE DE TABLA VACÍA --- */
+.tabla-vacia {
+  text-align: center;
+  padding: 40px !important;
+  color: #64748b !important;
+  font-style: italic;
 }
 
 /* --- RESPONSIVO --- */

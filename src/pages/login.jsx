@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Login.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast"; // <-- ¡Importamos la magia aquí! 🎈
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,7 +11,6 @@ export default function Login() {
 
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
 
   const validateEmail = (value) => {
     setEmail(value);
@@ -35,7 +35,7 @@ export default function Login() {
     if (!value.trim()) {
       setPasswordError("Debe ingresar una contraseña.");
     } else if (value.length < 8) {
-      setPasswordError("Verificar el mínimo de caracteres permitidos.");
+      setPasswordError("La contraseña debe tener al menos 8 caracteres.");
     } else {
       setPasswordError("");
     }
@@ -44,16 +44,18 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    setErrorMsg("");
-
     if (emailError || passwordError) {
+      toast.error("Corrige los errores antes de continuar.");
       return;
     }
 
     if (!email || !password) {
-      setErrorMsg("Complete todos los campos.");
+      toast.error("Complete todos los campos.");
       return;
     }
+
+    // Ponemos un globito de carga mientras espera al servidor
+    const toastId = toast.loading("Iniciando sesión...");
 
     try {
       const response = await fetch("http://localhost:5000/auth/login", {
@@ -76,14 +78,21 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      if (data.user.rol === "admin") {
-        window.location.href = "/admin";
-      } else if (data.user.rol === "teacher") {
-        window.location.href = "/teacher";
-      }
+      // ¡Cambiamos el globito a éxito! ✅
+      toast.success("¡Bienvenido a EmotionLab!", { id: toastId });
+
+      // Esperamos 1.5 segundos para que el usuario alcance a ver el globito verde antes de cambiar de pantalla
+      setTimeout(() => {
+        if (data.user.rol === "admin") {
+          window.location.replace("/admin");
+        } else if (data.user.rol === "teacher") {
+          window.location.replace("/teacher");
+        }
+      }, 1500);
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || "Error al iniciar sesión");
+      // ¡Cambiamos el globito a error! ❌
+      toast.error(err.message || "Error al iniciar sesión", { id: toastId });
     }
   };
 
@@ -95,8 +104,6 @@ export default function Login() {
         <p className="login-subtitle">
           Ingresa tus credenciales para continuar
         </p>
-
-        {errorMsg && <div className="error-message">{errorMsg}</div>}
 
         <form onSubmit={handleLogin}>
           <div className="form-group">

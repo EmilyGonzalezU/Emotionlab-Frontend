@@ -1,328 +1,183 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import toast from "react-hot-toast";
 
-// Reutilizamos el mismo CSS de CuentaAdmin
+// ¡Reciclamos el CSS del admin para mantener el mismo diseño sin esfuerzo!
 import "../vista_admin/cuenta_admin.css";
 
 export default function CuentaVisor() {
-  // =========================================================
-  // DATOS DEL USUARIO
-  // =========================================================
+  const mountedRef = useRef(false);
+  const fetchingRef = useRef(false);
 
+  // guardamos el correo y nombre del visor para q se visualice
   const [datosUser, setDatosUser] = useState({
     nombre: "Cargando...",
     email: "Cargando...",
   });
 
-  // =========================================================
-  // CONTRASEÑAS
-  // =========================================================
-
+  // este es para las contraseñas ehh la nueva, la actual y para confirmar contraseña
   const [claves, setClaves] = useState({
     actual: "",
     nueva: "",
     confirmar: "",
   });
 
-  // =========================================================
-  // ERRORES DE CADA CAMPO
-  // =========================================================
-
-  const [actualError, setActualError] = useState("");
-  const [nuevaError, setNuevaError] = useState("");
-  const [confirmarError, setConfirmarError] = useState("");
-
-  // =========================================================
-  // MENSAJE GENERAL
-  // =========================================================
-
-  const [mensaje, setMensaje] = useState({
-    texto: "",
-    tipo: "",
-  });
-
-  // =========================================================
-  // ESTADO DE CARGA
-  // =========================================================
-
+  // el cargando es para q el usuario no mande la solicitud 2 veces
   const [cargando, setCargando] = useState(false);
 
-  // =========================================================
-  // OBTENER DATOS DEL USUARIO
-  // =========================================================
+  const obtenerMisDatos = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+    try {
+      const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    const obtenerMisDatos = async () => {
-      try {
-        const token = localStorage.getItem("token");
+      const respuesta = await fetch("http://localhost:5000/users/me", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        const respuesta = await fetch("http://localhost:5000/users/me", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!respuesta.ok) {
-          console.error("Error obteniendo usuario:", respuesta.status);
-          return;
-        }
-
+      if (respuesta.ok) {
         const datos = await respuesta.json();
-
         setDatosUser({
           nombre: datos.nombre || "Sin nombre",
           email: datos.email || "Sin correo",
         });
-      } catch (error) {
-        console.error("Error al obtener los datos de la cuenta:", error);
       }
-    };
-
-    obtenerMisDatos();
+    } catch (error) {
+      console.error("Error al obtener los datos de la cuenta", error);
+    } finally {
+      fetchingRef.current = false;
+    }
   }, []);
 
-  // =========================================================
-  // CAMBIO DE LOS CAMPOS
-  // =========================================================
+  // el useEffect para q se muestre solo una vez
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    obtenerMisDatos();
+  }, [obtenerMisDatos]);
 
   const manejarCambio = (e) => {
     const { name, value } = e.target;
-
-    setClaves((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Limpiar error del campo correspondiente
-
-    if (name === "actual") {
-      setActualError("");
-    }
-
-    if (name === "nueva") {
-      setNuevaError("");
-    }
-
-    if (name === "confirmar") {
-      setConfirmarError("");
-    }
-
-    // Limpiar mensaje general al comenzar a escribir
-
-    setMensaje({
-      texto: "",
-      tipo: "",
-    });
+    setClaves((prev) => ({ ...prev, [name]: value }));
   };
 
-  // =========================================================
-  // CAMBIAR CONTRASEÑA
-  // =========================================================
-
+  // cambiar contraseña con GLOBITOS
   const cambiarContrasena = async (e) => {
     e.preventDefault();
 
-    // Limpiar errores anteriores
-
-    setActualError("");
-    setNuevaError("");
-    setConfirmarError("");
-
-    setMensaje({
-      texto: "",
-      tipo: "",
-    });
-
-    let hayErrores = false;
-
-    // =====================================================
-    // VALIDAR CONTRASEÑA ACTUAL
-    // =====================================================
-
-    if (!claves.actual.trim()) {
-      setActualError("Debe ingresar su contraseña actual.");
-
-      hayErrores = true;
-    }
-
-    // =====================================================
-    // VALIDAR NUEVA CONTRASEÑA
-    // =====================================================
-
-    if (!claves.nueva.trim()) {
-      setNuevaError("Debe ingresar una nueva contraseña.");
-
-      hayErrores = true;
-    } else if (claves.nueva.length < 8) {
-      setNuevaError("Verificar el mínimo de caracteres permitidos.");
-
-      hayErrores = true;
-    }
-
-    // =====================================================
-    // VALIDAR CONFIRMACIÓN
-    // =====================================================
-
-    if (!claves.confirmar.trim()) {
-      setConfirmarError("Debe confirmar la nueva contraseña.");
-
-      hayErrores = true;
-    }
-
-    // =====================================================
-    // COMPARAR CONTRASEÑAS
-    // =====================================================
-
-    if (claves.nueva && claves.confirmar && claves.nueva !== claves.confirmar) {
-      setConfirmarError("Las contraseñas nuevas no coinciden.");
-
-      hayErrores = true;
-    }
-
-    // =====================================================
-    // SI HAY ERRORES NO SE ENVÍA AL BACKEND
-    // =====================================================
-
-    if (hayErrores) {
+    if (!claves.actual || !claves.nueva || !claves.confirmar) {
+      toast.error("Por favor, llena todos los campos.", { duration: 3000 });
       return;
     }
 
-    // =====================================================
-    // ENVIAR AL BACKEND
-    // =====================================================
-
-    setCargando(true);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const respuesta = await fetch("http://localhost:5000/users/me/password", {
-        method: "PATCH",
-
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          current_password: claves.actual,
-          new_password: claves.nueva,
-        }),
-      });
-
-      // Intentar obtener respuesta JSON
-
-      let data = {};
-
-      try {
-        data = await respuesta.json();
-      } catch {
-        data = {};
-      }
-
-      // ===================================================
-      // CONTRASEÑA CAMBIADA
-      // ===================================================
-
-      if (respuesta.ok) {
-        setMensaje({
-          texto: "¡Contraseña actualizada con éxito!",
-          tipo: "exito",
-        });
-
-        setClaves({
-          actual: "",
-          nueva: "",
-          confirmar: "",
-        });
-
-        return;
-      }
-
-      // ===================================================
-      // ERROR DEL BACKEND
-      // ===================================================
-
-      setMensaje({
-        texto: data.error || "Hubo un error al cambiar la contraseña.",
-        tipo: "error",
-      });
-    } catch (error) {
-      console.error("Error cambiando contraseña:", error);
-
-      setMensaje({
-        texto: "Error de conexión con el servidor.",
-        tipo: "error",
-      });
-    } finally {
-      setCargando(false);
+    if (claves.nueva !== claves.confirmar) {
+      toast.error("Las contraseñas nuevas no coinciden.", { duration: 3000 });
+      return;
     }
+
+    // Lanzamos el globito preguntón
+    toast(
+      (t) => (
+        <div>
+          <p
+            style={{
+              margin: "0 0 10px 0",
+              fontWeight: "bold",
+              color: "#17315E",
+            }}>
+            ¿Seguro que quieres cambiar tu contraseña?
+          </p>
+          <div
+            style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+            {/* Botón de SÍ */}
+            <button
+              className="btn-cuenta-alerta-confirmar"
+              onClick={async () => {
+                toast.dismiss(t.id); // Cerramos la pregunta
+                setCargando(true); // Ponemos el botón principal en "cargando"
+
+                try {
+                  const token = localStorage.getItem("token");
+                  const respuesta = await fetch(
+                    "http://localhost:5000/users/me/password",
+                    {
+                      method: "PATCH",
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        current_password: claves.actual,
+                        new_password: claves.nueva,
+                      }),
+                    },
+                  );
+
+                  const data = await respuesta.json();
+
+                  if (respuesta.ok) {
+                    toast.success("¡Contraseña actualizada con éxito!", {
+                      duration: 3000,
+                    });
+                    setClaves({ actual: "", nueva: "", confirmar: "" });
+                  } else {
+                    toast.error(data.error || "Contraseña actual incorrecta.", {
+                      duration: 3000,
+                    });
+                  }
+                } catch (error) {
+                  toast.error("Error de conexión con el servidor.", {
+                    duration: 3000,
+                  });
+                } finally {
+                  setCargando(false);
+                }
+              }}>
+              Sí, cambiar
+            </button>
+
+            {/* Botón de NO */}
+            <button
+              className="btn-cuenta-alerta-cancelar"
+              onClick={() => toast.dismiss(t.id)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: 8000 },
+    );
   };
 
-  // =========================================================
-  // INTERFAZ
-  // =========================================================
-
   return (
-    <div>
-      {/* =====================================================
-          TÍTULO
-      ===================================================== */}
-
-      <h1
-        style={{
-          color: "#17315E",
-          fontSize: "26px",
-          marginTop: 0,
-          marginBottom: "25px",
-          fontWeight: "bold",
-        }}>
-        Mi Cuenta
-      </h1>
+    <div className="sync-dashboard">
+      <h2 className="sync-titulo">Mi Cuenta</h2>
 
       <div className="dashboard-layout">
-        {/* =================================================
-            PANEL IZQUIERDO
-        ================================================= */}
-
+        {/* PANEL IZQUIERDO: Datos del Usuario */}
         <div className="panel-izquierdo">
           <div className="logs-container">
             <h3 className="logs-titulo">Información Personal</h3>
 
             <div className="info-cuenta-lista">
-              {/* NOMBRE */}
-
               <div className="info-grupo">
                 <p className="info-etiqueta">Nombre Completo</p>
-
                 <p className="info-valor">{datosUser.nombre}</p>
               </div>
 
-              {/* CORREO */}
-
               <div className="info-grupo">
                 <p className="info-etiqueta">Correo Electrónico</p>
-
                 <p className="info-valor">{datosUser.email}</p>
               </div>
 
-              {/* ROL */}
-
               <div className="info-grupo sin-borde">
-                <p
-                  className="info-etiqueta"
-                  style={{
-                    marginBottom: "10px",
-                  }}>
+                <p className="info-etiqueta" style={{ marginBottom: "10px" }}>
                   Rol en el Sistema
                 </p>
-
+                {/* Etiqueta adaptada para el visualizador */}
                 <span
                   className="badge-estado listo badge-rol"
-                  style={{
-                    backgroundColor: "#DBEAFE",
-                    color: "#1E40AF",
-                  }}>
+                  style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>
                   Visualizador
                 </span>
               </div>
@@ -330,26 +185,17 @@ export default function CuentaVisor() {
           </div>
         </div>
 
-        {/* =================================================
-            PANEL DERECHO
-        ================================================= */}
-
+        {/* PANEL DERECHO: Cambiar Contraseña */}
         <div className="panel-derecho">
           <div className="logs-container">
             <h3 className="logs-titulo">Seguridad</h3>
-
             <p className="seguridad-desc">
               Actualiza tu contraseña de acceso aquí.
             </p>
 
             <form onSubmit={cambiarContrasena} className="form-cuenta">
-              {/* =================================================
-                  CONTRASEÑA ACTUAL
-              ================================================= */}
-
               <div className="form-grupo">
                 <label className="form-label">Contraseña Actual</label>
-
                 <input
                   type="password"
                   name="actual"
@@ -358,19 +204,10 @@ export default function CuentaVisor() {
                   placeholder="Ingresa tu contraseña actual"
                   className="form-input"
                 />
-
-                {actualError && (
-                  <span className="field-error">{actualError}</span>
-                )}
               </div>
-
-              {/* =================================================
-                  NUEVA CONTRASEÑA
-              ================================================= */}
 
               <div className="form-grupo">
                 <label className="form-label">Nueva Contraseña</label>
-
                 <input
                   type="password"
                   name="nueva"
@@ -379,19 +216,10 @@ export default function CuentaVisor() {
                   placeholder="Crea una nueva contraseña"
                   className="form-input"
                 />
-
-                {nuevaError && (
-                  <span className="field-error">{nuevaError}</span>
-                )}
               </div>
-
-              {/* =================================================
-                  CONFIRMAR CONTRASEÑA
-              ================================================= */}
 
               <div className="form-grupo">
                 <label className="form-label">Confirmar Nueva Contraseña</label>
-
                 <input
                   type="password"
                   name="confirmar"
@@ -400,30 +228,7 @@ export default function CuentaVisor() {
                   placeholder="Repite la nueva contraseña"
                   className="form-input"
                 />
-
-                {confirmarError && (
-                  <span className="field-error">{confirmarError}</span>
-                )}
               </div>
-
-              {/* =================================================
-                  MENSAJE GENERAL
-              ================================================= */}
-
-              {mensaje.texto && (
-                <div
-                  className={
-                    mensaje.tipo === "error"
-                      ? "error-message"
-                      : "success-message"
-                  }>
-                  {mensaje.texto}
-                </div>
-              )}
-
-              {/* =================================================
-                  BOTÓN
-              ================================================= */}
 
               <button
                 type="submit"

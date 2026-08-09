@@ -1,21 +1,28 @@
-.mensaje-alerta {
-  margin-top: 10px;
-  padding: 10px 12px;
+/* --- BOTÓN PRINCIPAL DE CAMBIAR CONTRASEÑA --- */
+.btn-guardar {
+  width: 100%;
+  padding: 14px;
+  background-color: #17315e; /* Tu azul elegante */
+  color: #ffffff; /* Letras blancas para que se lean bien */
+  border: none;
   border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  box-shadow: 0 4px 6px rgba(23, 49, 94, 0.2);
 }
 
-/* MENSAJE DE ERROR */
-.mensaje-alerta.error {
-  color: #dc2626;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+/* Efecto al pasar el mouse */
+.btn-guardar:hover:not(:disabled) {
+  background-color: #102548;
 }
 
-/* MENSAJE DE ÉXITO */
-.mensaje-alerta.exito {
-  color: #16a34a;
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
+/* Cuando el botón se desactiva (cargando) se pone gris */
+.btn-guardar:disabled,
+.btn-guardar.cargando {
+  background-color: #94a3b8;
+  color: #ffffff;
+  cursor: not-allowed;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./sesion_detalle.css";
 
@@ -9,6 +9,8 @@ import * as XLSX from "xlsx";
 const SesionDetalle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const mountedRef = useRef(new Set());
+  const fetchingRef = useRef(false);
 
   const [sesionData, setSesionData] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -23,36 +25,40 @@ const SesionDetalle = () => {
   // =========================================================
   // OBTENER DATOS DE LA SESIÓN DESDE EL BACKEND
   // =========================================================
-  useEffect(() => {
-    const obtenerDetalleSesion = async () => {
-      try {
-        const token = localStorage.getItem("token");
+  const obtenerDetalleSesion = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+    try {
+      const token = localStorage.getItem("token");
 
-        const respuesta = await fetch(`http://localhost:5000/sessions/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+      const respuesta = await fetch(`http://localhost:5000/sessions/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (!respuesta.ok) {
-          throw new Error("Error al obtener la información de la sesión");
-        }
-
-        const data = await respuesta.json();
-        setSesionData(data);
-      } catch (err) {
-        console.error("Error al obtener detalle:", err);
-        setError("No se pudo cargar la información de la sesión.");
-      } finally {
-        setCargando(false);
+      if (!respuesta.ok) {
+        throw new Error("Error al obtener la información de la sesión");
       }
-    };
 
-    if (id) {
-      obtenerDetalleSesion();
+      const data = await respuesta.json();
+      setSesionData(data);
+    } catch (err) {
+      console.error("Error al obtener detalle:", err);
+      setError("No se pudo cargar la información de la sesión.");
+    } finally {
+      setCargando(false);
+      fetchingRef.current = false;
     }
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    if (mountedRef.current.has(id)) return;
+    mountedRef.current.add(id);
+    obtenerDetalleSesion();
+  }, [id, obtenerDetalleSesion]);
 
   // =========================================================
   // LECTURA DE CAMPOS Y EXTRACCIÓN PROFUNDA DE PREDICCIÓN

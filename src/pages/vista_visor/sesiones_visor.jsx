@@ -1,11 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import "./sesiones_visor.css";
 
+const procesarSesionRaw = (item, index) => {
+  const fechaRaw = item.updated_at || item.created_at || item.fecha;
+  const objetoFecha = fechaRaw ? new Date(fechaRaw) : null;
+
+  const fechaTexto = objetoFecha
+    ? objetoFecha.toLocaleDateString("es-CL", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "Sin fecha";
+
+  const horaTexto = objetoFecha
+    ? objetoFecha.toLocaleTimeString("es-CL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
+  const cursoRaw = item.curso || item.course || "Curso no asignado";
+
+  return {
+    id: item.id || item.session_id || `SES-${index + 1}`,
+    _raw: item,
+    fechaRaw: objetoFecha,
+    fechaFormateada: `${fechaTexto} ${horaTexto}`.trim(),
+    fechaComparar: fechaTexto.replaceAll("/", "-"),
+    curso: cursoRaw,
+    cursoNormalizado: cursoRaw.toLowerCase().trim(),
+    genero: item.genero || item.gender || item.participante_genero || "",
+  };
+};
+
 const SesionesVisor = () => {
-  // ============================================================
-  // SESIONES
-  // ============================================================
+  const navigate = useNavigate();
+  const mountedRef = useRef(false);
+  const fetchingRef = useRef(false);
 
   const [sesionesOriginales, setSesionesOriginales] = useState([]);
   const [sesionesFiltradas, setSesionesFiltradas] = useState([]);
@@ -13,19 +47,9 @@ const SesionesVisor = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  // ============================================================
-  // IMPORTACIÓN DESDE AWS
-  // ============================================================
-
   const [importando, setImportando] = useState(false);
   const [mensajeImportacion, setMensajeImportacion] = useState("");
   const [tipoMensajeImportacion, setTipoMensajeImportacion] = useState("");
-
-  const navigate = useNavigate();
-
-  // ============================================================
-  // FILTROS
-  // ============================================================
 
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false);
   const [submenúAbierto, setSubmenúAbierto] = useState(null);
@@ -36,54 +60,46 @@ const SesionesVisor = () => {
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
 
-  // ============================================================
-  // BÚSQUEDA POR ID
-  // ============================================================
-
   const [modalBusquedaAbierta, setModalBusquedaAbierta] = useState(false);
   const [busquedaId, setBusquedaId] = useState("");
-
-  // ============================================================
-  // PAGINACIÓN
-  // ============================================================
 
   const [paginaActual, setPaginaActual] = useState(1);
 
   const sesionesPorPagina = 8;
 
-  // ============================================================
-  // CURSOS
-  // ============================================================
-
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
 
   const opcionesGenero = ["Femenino", "Masculino", "Prefiero no decir"];
 
-  // ============================================================
-  // URL
-  // ============================================================
-
   const [searchParams] = useSearchParams();
-
   const fechaFiltroUrl = searchParams.get("fecha");
 
-  // ============================================================
-  // OBTENER SESIONES DESDE EL BACKEND
-  // ============================================================
+  const actualizarCursosYFiltros = useCallback((lista) => {
+    const cursosUnicos = [];
+    const cursosVistos = new Set();
+    lista.forEach((s) => {
+      const clave = s.cursoNormalizado;
+      if (!cursosVistos.has(clave) && clave !== "curso no asignado") {
+        cursosVistos.add(clave);
+        cursosUnicos.push(s.curso);
+      }
+    });
+    setCursosDisponibles(cursosUnicos);
+    setSesionesFiltradas(lista);
+  }, []);
 
-  const obtenerSesiones = async () => {
+  const obtenerSesiones = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
       setCargando(true);
       setError(null);
 
       const token = localStorage.getItem("token");
-
       const respuesta = await fetch("http://localhost:5000/sessions", {
         method: "GET",
-
         headers: {
           Authorization: `Bearer ${token}`,
-
           "Content-Type": "application/json",
         },
       });
@@ -93,76 +109,8 @@ const SesionesVisor = () => {
       }
 
       const data = await respuesta.json();
-
-      // ========================================================
-      // PROCESAR SESIONES
-      // ========================================================
-
-      let listaProcesada = data.map((item, index) => {
-        // Fecha principal
-        const fechaRaw = item.updated_at || item.created_at || item.fecha;
-
-        const objetoFecha = fechaRaw ? new Date(fechaRaw) : null;
-
-        // ======================================================
-        // FECHA FORMATEADA
-        // ======================================================
-
-        const fechaTexto = objetoFecha
-          ? objetoFecha.toLocaleDateString("es-CL", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })
-          : "Sin fecha";
-
-        // ======================================================
-        // HORA
-        // ======================================================
-
-        const horaTexto = objetoFecha
-          ? objetoFecha.toLocaleTimeString("es-CL", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "";
-
-        // ======================================================
-        // CURSO
-        // ======================================================
-
-        const cursoRaw = item.curso || item.course || "Curso no asignado";
-
-        // ======================================================
-        // OBJETO FINAL
-        // ======================================================
-
-        return {
-          id: item.id || item.session_id || `SES-${index + 1}`,
-
-          fechaRaw: objetoFecha,
-
-          fechaFormateada: `${fechaTexto} ${horaTexto}`.trim(),
-
-          fechaComparar: fechaTexto.replaceAll("/", "-"),
-
-          curso: cursoRaw,
-
-          cursoNormalizado: cursoRaw.toLowerCase().trim(),
-
-          genero: item.genero || item.gender || item.participante_genero || "",
-        };
-      });
-
-      // ========================================================
-      // ORDENAR DE MÁS NUEVA A MÁS ANTIGUA
-      // ========================================================
-
+      let listaProcesada = data.map((item, index) => procesarSesionRaw(item, index));
       listaProcesada.sort((a, b) => (b.fechaRaw || 0) - (a.fechaRaw || 0));
-
-      // ========================================================
-      // FILTRO DE FECHA DE LA URL
-      // ========================================================
 
       if (fechaFiltroUrl) {
         listaProcesada = listaProcesada.filter(
@@ -170,145 +118,91 @@ const SesionesVisor = () => {
         );
       }
 
-      // ========================================================
-      // OBTENER CURSOS ÚNICOS
-      // ========================================================
-
-      const cursosUnicos = [];
-
-      const cursosVistos = new Set();
-
-      listaProcesada.forEach((s) => {
-        const clave = s.cursoNormalizado;
-
-        if (!cursosVistos.has(clave) && clave !== "curso no asignado") {
-          cursosVistos.add(clave);
-
-          cursosUnicos.push(s.curso);
-        }
-      });
-
-      // ========================================================
-      // ACTUALIZAR ESTADOS
-      // ========================================================
-
-      setCursosDisponibles(cursosUnicos);
-
       setSesionesOriginales(listaProcesada);
-
-      setSesionesFiltradas(listaProcesada);
+      actualizarCursosYFiltros(listaProcesada);
     } catch (err) {
       console.error("Error en el fetch:", err);
-
       setError("No se pudieron obtener las sesiones.");
     } finally {
       setCargando(false);
+      fetchingRef.current = false;
     }
-  };
-
-  // ============================================================
-  // IMPORTAR NUEVAS SESIONES DESDE AWS
-  // ============================================================
+  }, [fechaFiltroUrl, actualizarCursosYFiltros]);
 
   const importarSesiones = async () => {
+    if (importando) return;
     try {
       setImportando(true);
-
       setMensajeImportacion("");
-
       setTipoMensajeImportacion("");
-
       setError(null);
 
       const token = localStorage.getItem("token");
 
-      // ========================================================
-      // LLAMAR AL ENDPOINT DE IMPORTACIÓN
-      // ========================================================
-
       const respuesta = await fetch("http://localhost:5000/sessions/import", {
         method: "POST",
-
         headers: {
           Authorization: `Bearer ${token}`,
-
           "Content-Type": "application/json",
         },
       });
 
-      // ========================================================
-      // LEER RESPUESTA
-      // ========================================================
-
       let data = {};
-
       try {
         data = await respuesta.json();
       } catch {
         data = {};
       }
 
-      // ========================================================
-      // ERROR DEL BACKEND
-      // ========================================================
-
       if (!respuesta.ok) {
         throw new Error(data.error || "No se pudieron importar las sesiones.");
       }
 
-      // ========================================================
-      // MENSAJE
-      //
-      // El backend puede devolver:
-      //
-      // nuevas
-      // imported
-      // importadas
-      // created
-      //
-      // Intentamos soportar cualquiera de ellos.
-      // ========================================================
-
       const cantidadNuevas =
-        data.nuevas ?? data.imported ?? data.importadas ?? data.created ?? 0;
+        data.nuevas ??
+        data.imported ??
+        data.importadas ??
+        data.pending_identification?.length ??
+        data.created ??
+        0;
+
+      const cantSkip =
+        data.omitidas_existentes ??
+        data.skipped_existing?.length ??
+        data.skipped ??
+        0;
 
       if (cantidadNuevas > 0) {
         setMensajeImportacion(
           `Se importaron ${cantidadNuevas} sesiones nuevas.`,
         );
-
         setTipoMensajeImportacion("exito");
+        toast.success(`¡${cantidadNuevas} sesiones nuevas importadas!`);
       } else {
-        setMensajeImportacion("No hay sesiones nuevas para importar.");
-
+        setMensajeImportacion(
+          cantSkip > 0
+            ? `No hay sesiones nuevas (${cantSkip} ya existentes).`
+            : "No hay sesiones nuevas para importar.",
+        );
         setTipoMensajeImportacion("info");
       }
-
-      // ========================================================
-      // VOLVER A CARGAR LAS SESIONES
-      //
-      // Esto hace que las nuevas aparezcan inmediatamente
-      // ========================================================
 
       await obtenerSesiones();
     } catch (error) {
       console.error("Error importando sesiones:", error);
-
       setMensajeImportacion(error.message || "Error al importar las sesiones.");
-
       setTipoMensajeImportacion("error");
+      toast.error(error.message || "Error al importar las sesiones.");
     } finally {
       setImportando(false);
     }
   };
 
-  // ============================================================
-  // CARGA INICIAL
-  // ============================================================
-
   useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
     obtenerSesiones();
-  }, [fechaFiltroUrl]);
+  }, [obtenerSesiones]);
 
   // ============================================================
   // APLICAR FILTROS + BÚSQUEDA
