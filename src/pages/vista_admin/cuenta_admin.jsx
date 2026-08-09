@@ -18,6 +18,10 @@ export default function CuentaAdmin() {
   });
 
   const [cargando, setCargando] = useState(false);
+  const [errores, setErrores] = useState({
+    nueva: "",
+    confirmar: "",
+  });
 
   const obtenerMisDatos = useCallback(async () => {
     if (fetchingRef.current) return;
@@ -49,25 +53,88 @@ export default function CuentaAdmin() {
     obtenerMisDatos();
   }, [obtenerMisDatos]);
 
-  //esto hace q se guarden los cambios en lo de las claves
+  // Validación y manejo de cambios en tiempo real
   const manejarCambio = (e) => {
     const { name, value } = e.target;
     setClaves((prev) => ({ ...prev, [name]: value }));
+
+    // Validaciones en tiempo real
+    if (name === "nueva") {
+      if (value.length > 0 && value.length < 8) {
+        setErrores((prev) => ({
+          ...prev,
+          nueva: "La contraseña debe tener al menos 8 caracteres",
+        }));
+      } else {
+        setErrores((prev) => ({ ...prev, nueva: "" }));
+      }
+
+      // Si hay una confirmación escrita, validar coincidencia
+      if (claves.confirmar && value !== claves.confirmar) {
+        setErrores((prev) => ({
+          ...prev,
+          confirmar: "Las contraseñas no coinciden",
+        }));
+      } else if (claves.confirmar && value === claves.confirmar) {
+        setErrores((prev) => ({ ...prev, confirmar: "" }));
+      }
+    }
+
+    if (name === "confirmar") {
+      if (value && value !== claves.nueva) {
+        setErrores((prev) => ({
+          ...prev,
+          confirmar: "Las contraseñas no coinciden",
+        }));
+      } else {
+        setErrores((prev) => ({ ...prev, confirmar: "" }));
+      }
+    }
+  };
+
+  // Validación completa antes de enviar
+  const validarFormulario = () => {
+    // Verificar campos vacíos
+    if (!claves.actual || !claves.nueva || !claves.confirmar) {
+      toast.error("Por favor, llena todos los campos.", { duration: 5000 });
+      return false;
+    }
+
+    // Validar longitud mínima
+    if (claves.nueva.length < 8) {
+      toast.error("La nueva contraseña debe tener al menos 8 caracteres.", {
+        duration: 5000,
+      });
+      return false;
+    }
+
+    // Validar que coincidan
+    if (claves.nueva !== claves.confirmar) {
+      toast.error("Las contraseñas nuevas no coinciden.", { duration: 5000 });
+      return false;
+    }
+
+    // Validar que no sea igual a la actual
+    if (claves.nueva === claves.actual) {
+      toast.error("La nueva contraseña debe ser diferente a la actual.", {
+        duration: 5000,
+      });
+      return false;
+    }
+
+    return true;
   };
 
   // cambiar contraseña
   const cambiarContrasena = async (e) => {
     e.preventDefault();
 
-    if (!claves.actual || !claves.nueva || !claves.confirmar) {
-      toast.error("Por favor, llena todos los campos.", { duration: 5000 });
-      return;
-    }
-    if (claves.nueva !== claves.confirmar) {
-      toast.error("Las contraseñas nuevas no coinciden.", { duration: 5000 });
+    // Validar el formulario
+    if (!validarFormulario()) {
       return;
     }
 
+    // Mostrar confirmación
     toast(
       (t) => (
         <div>
@@ -85,8 +152,8 @@ export default function CuentaAdmin() {
             <button
               className="btn-toast-azul"
               onClick={async () => {
-                toast.dismiss(t.id); // Cerramos la pregunta
-                setCargando(true); // Ponemos el botón en "cargando"
+                toast.dismiss(t.id);
+                setCargando(true);
 
                 try {
                   const token = localStorage.getItem("token");
@@ -112,6 +179,7 @@ export default function CuentaAdmin() {
                       duration: 5000,
                     });
                     setClaves({ actual: "", nueva: "", confirmar: "" });
+                    setErrores({ nueva: "", confirmar: "" });
                   } else {
                     toast.error(data.error || "Contraseña actual incorrecta.", {
                       duration: 5000,
@@ -202,9 +270,20 @@ export default function CuentaAdmin() {
                   name="nueva"
                   value={claves.nueva}
                   onChange={manejarCambio}
-                  placeholder="Crea una nueva contraseña"
-                  className="form-input"
+                  placeholder="Crea una nueva contraseña (mínimo 8 caracteres)"
+                  className={`form-input ${errores.nueva ? "input-error" : ""}`}
                 />
+                {errores.nueva && (
+                  <p
+                    className="error-mensaje"
+                    style={{
+                      color: "red",
+                      fontSize: "12px",
+                      marginTop: "5px",
+                    }}>
+                    {errores.nueva}
+                  </p>
+                )}
               </div>
 
               <div className="form-grupo">
@@ -215,8 +294,19 @@ export default function CuentaAdmin() {
                   value={claves.confirmar}
                   onChange={manejarCambio}
                   placeholder="Repite la nueva contraseña"
-                  className="form-input"
+                  className={`form-input ${errores.confirmar ? "input-error" : ""}`}
                 />
+                {errores.confirmar && (
+                  <p
+                    className="error-mensaje"
+                    style={{
+                      color: "red",
+                      fontSize: "12px",
+                      marginTop: "5px",
+                    }}>
+                    {errores.confirmar}
+                  </p>
+                )}
               </div>
 
               <button
