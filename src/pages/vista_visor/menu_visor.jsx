@@ -1,7 +1,7 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../../components/Sidebar';
-import './menu_visor.css';
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Sidebar from "../../components/Sidebar";
+import "./menu_visor.css";
 
 export default function MenuVisor() {
   return (

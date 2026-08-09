@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './creacion_visor.css';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 //LOS NAVIGATE hacen q cambies d pagina sin necesidad de tener q anotarlo con un a
 export default function CrearVisualizador() {
@@ -9,6 +10,12 @@ export default function CrearVisualizador() {
   const [cargando, setCargando] = useState(false);
   //muestra si fue exitoso o no la creacion del usuario
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errores, setErrores] = useState({
+    nombre: '',
+    email: '',
+    password: ''
+  });
   
   //se agrupan los datos en un bloque para q cuando se llamen bajo el nombre teacher los traiga
   const [formData, setFormData] = useState({
@@ -20,10 +27,80 @@ export default function CrearVisualizador() {
 
   // esta funcion permite q el usuario pueda editar en el mismo texto sin necesidad de viajar a otra pagina
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+
+    setMensaje({ tipo: '', texto: '' });
+
+    switch (name) {
+      case 'nombre':
+        if (!value.trim()) {
+          setErrores((prev) => ({
+            ...prev,
+            nombre: 'Debe ingresar un nombre.'
+          }));
+        } else if (value.trim().length < 3) {
+          setErrores((prev) => ({
+            ...prev,
+            nombre: 'Debe tener al menos 3 caracteres.'
+          }));
+        } else {
+          setErrores((prev) => ({
+            ...prev,
+            nombre: ''
+          }));
+        }
+        break;
+
+      case 'email':
+        {
+          const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+          if (!value.trim()) {
+            setErrores((prev) => ({
+              ...prev,
+              email: 'Debe ingresar un correo.'
+            }));
+          } else if (!regex.test(value)) {
+            setErrores((prev) => ({
+              ...prev,
+              email: 'Ingrese un correo válido.'
+            }));
+          } else {
+            setErrores((prev) => ({
+              ...prev,
+              email: ''
+            }));
+          }
+        }
+        break;
+
+      case 'password':
+        if (!value.trim()) {
+          setErrores((prev) => ({
+            ...prev,
+            password: 'Debe ingresar una contraseña.'
+          }));
+        } else if (value.length < 8) {
+          setErrores((prev) => ({
+            ...prev,
+            password: 'Debe tener al menos 8 caracteres.'
+          }));
+        } else {
+          setErrores((prev) => ({
+            ...prev,
+            password: ''
+          }));
+        }
+        break;
+
+      default:
+        break;
+    }
   };
 
   // Función para enviar los datos a Flask
@@ -31,6 +108,28 @@ export default function CrearVisualizador() {
     e.preventDefault();
     setCargando(true);
     setMensaje({ tipo: '', texto: '' });
+
+    if (
+      errores.nombre ||
+      errores.email ||
+      errores.password
+    ) {
+      setCargando(false);
+      return;
+    }
+
+    if (
+      !formData.nombre ||
+      !formData.email ||
+      !formData.password
+    ) {
+      setMensaje({
+        tipo: 'error',
+        texto: 'Complete todos los campos.'
+      });
+      setCargando(false);
+      return;
+    }
 
     try {
         //obtenemos el token q se creo cuando el usuario inicia sesion
@@ -104,9 +203,13 @@ export default function CrearVisualizador() {
             name="nombre" 
             value={formData.nombre} 
             onChange={handleChange} 
-            required 
             placeholder="Ej: Juan Pérez"
           />
+          {errores.nombre && (
+            <span className="field-error">
+              {errores.nombre}
+            </span>
+          )}
         </div>
 
         <div className="grupo-input">
@@ -116,21 +219,39 @@ export default function CrearVisualizador() {
             name="email" 
             value={formData.email} 
             onChange={handleChange} 
-            required 
             placeholder="usuario@emotionlab.cl"
           />
+          {errores.email && (
+            <span className="field-error">
+              {errores.email}
+            </span>
+          )}
         </div>
 
         <div className="grupo-input">
           <label>Contraseña Temporal:</label>
-          <input 
-            type="password" 
-            name="password" 
-            value={formData.password} 
-            onChange={handleChange} 
-            required 
-            placeholder="Mínimo 6 caracteres"
-          />
+          <div className="password-container">
+            <input 
+              type={showPassword ? 'text' : 'password'}
+              name="password" 
+              value={formData.password} 
+              onChange={handleChange} 
+              placeholder="Mínimo 8 caracteres"
+            />
+
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+          {errores.password && (
+            <span className="field-error">
+              {errores.password}
+            </span>
+          )}
         </div>
 
         <div className="grupo-input">

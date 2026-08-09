@@ -64,7 +64,9 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   background-color: #ffffff;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .sesion-card:hover {
@@ -194,7 +196,8 @@
   cursor: pointer;
 }
 
-.dropdown-item:hover, .dropdown-item.seleccionado {
+.dropdown-item:hover,
+.dropdown-item.seleccionado {
   background-color: #f1f5f9;
   color: #17315e;
   font-weight: 600;
@@ -350,4 +353,49 @@
   font-size: 0.82rem;
   cursor: pointer;
   font-weight: bold;
+}
+
+.btn-importar-sesiones {
+  border: none;
+  background: #17315e;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.btn-importar-sesiones:hover {
+  background: #254779;
+}
+
+.btn-importar-sesiones:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mensaje-importacion {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.mensaje-importacion.exito {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.mensaje-importacion.info {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.mensaje-importacion.error {
+  color: #b91c1c;
+  background: #fee2e2;
 }

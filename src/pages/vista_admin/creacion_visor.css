@@ -74,6 +74,33 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  width: 100%;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748B;
+  font-size: 18px;
+}
+
+.field-error {
+  display: block;
+  margin-top: 6px;
+  color: #DC2626;
+  font-size: 13px;
+}
+
 .btn-guardar {
   width: 100%;
   padding: 14px;

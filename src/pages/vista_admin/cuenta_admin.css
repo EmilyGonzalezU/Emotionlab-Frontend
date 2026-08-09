@@ -1,0 +1,21 @@
+.mensaje-alerta {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* MENSAJE DE ERROR */
+.mensaje-alerta.error {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+/* MENSAJE DE ÉXITO */
+.mensaje-alerta.exito {
+  color: #16a34a;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
