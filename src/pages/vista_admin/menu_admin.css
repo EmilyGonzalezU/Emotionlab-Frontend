@@ -1,0 +1,96 @@
+/* Contenedor principal */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-main-content {
+  margin-left: 240px; /* Esto empuja el contenido */
+  width: calc(100% - 240px);
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+/* Barra lateral (Sidebar) un pelín más delgada */
+.admin-sidebar {
+  width: 230px; /* Adelgazamos la barra un poco */
+  background-color: #17315e;
+  color: #ffffff;
+  padding: 20px 15px; /* Menos relleno a los lados */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
+
+/* Título / Logo de la barra lateral */
+.sidebar-brand {
+  text-align: center;
+  border-bottom: 1px solid #2e5aac;
+  padding-bottom: 15px; /* Menos espacio abajo */
+  margin-top: 0;
+  font-size: 22px; /* Letra más delicada */
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Contenedor de los enlaces */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* ¡AQUÍ ESTÁ LA MAGIA! Juntamos mucho más las opciones */
+  margin-top: 20px;
+  flex: 1;
+  justify-content: flex-start; /* Obligamos a que se queden pegadas arriba */
+}
+
+/* Enlaces del menú (En dieta) */
+.sidebar-link {
+  color: #eaf2ff;
+  text-decoration: none;
+  font-size: 14px; /* Un puntito más chica para que se vea fina */
+  font-weight: 500;
+  padding: 10px 14px; /* ¡Le quitamos lo gordo! */
+  border-radius: 6px; /* Borde un poco más cuadrado y serio */
+  transition: all 0.2s ease;
+  display: block; /* Quitamos flex aquí para evitar que el texto se separe raro */
+}
+
+.sidebar-link:hover {
+  background-color: #102548;
+  color: #ffffff;
+  transform: translateX(4px); /* Un saltito más sutil */
+}
+
+/* --- BOTÓN DE LOGOUT (VERSIÓN SLIM) --- */
+.btn-logout {
+  padding: 10px 14px; /* Menos gordo */
+  margin-top: auto; /* Nos aseguramos 100% de que se vaya al fondo */
+
+  background-color: transparent;
+  color: #f87171;
+  border: 1px solid #f87171;
+  border-radius: 6px;
+
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px; /* Letra equilibrada con el resto del menú */
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.btn-logout:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Contenido central dinámico */
+.admin-main-content {
+  flex: 1;
+  padding: 40px;
+  background-color: #f8fafc;
+  overflow-y: auto;
+}

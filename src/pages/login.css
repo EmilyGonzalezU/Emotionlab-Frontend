@@ -3,35 +3,37 @@
 /* 1. Definimos tu paleta de colores globalmente */
 :root {
   /* Estados */
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
-  
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
   /* Primarios */
-  --color-primary: #17315E;
+  --color-primary: #17315e;
   --color-primary-hover: #102548;
-  --color-primary-light: #2E5AAC;
-  --color-secondary: #EAF2FF;
-  
+  --color-primary-light: #2e5aac;
+  --color-secondary: #eaf2ff;
+
   /* Fondos y bordes */
-  --color-bg-main: #F8FAFC;
-  --color-bg-card: #FFFFFF;
-  --color-border: #E2E8F0;
-  
+  --color-bg-main: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-border: #e2e8f0;
+
   /* Textos */
-  --color-text-main: #1E293B;
-  --color-text-sec: #64748B;
-  --color-disabled: #CBD5E1;
+  --color-text-main: #1e293b;
+  --color-text-sec: #64748b;
+  --color-disabled: #cbd5e1;
 }
 
 /* 2. Estructura base */
-html, body, #root {
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: "Segoe UI", system-ui, sans-serif;
 }
 
 /* Contenedor que centra el rectángulo en la pantalla */
@@ -41,7 +43,7 @@ html, body, #root {
   align-items: center;
   min-height: 100vh;
   /* Usamos tu Azul Oscuro (#102548) para salvar esos ojos */
-  background-color: var(--color-primary-hover); 
+  background-color: var(--color-primary-hover);
 }
 
 /* El rectángulo blanco (Tarjeta) */
@@ -49,7 +51,9 @@ html, body, #root {
   background-color: var(--color-bg-card);
   padding: 3rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--color-border);
   width: 100%;
   max-width: 400px;
@@ -68,18 +72,6 @@ html, body, #root {
   color: var(--color-text-sec); /* Gris */
   margin-bottom: 2rem;
   font-size: 0.95rem;
-}
-
-/* Mensaje de error */
-.error-message {
-  color: var(--color-error);
-  background-color: #FEF2F2; /* Fondo rojizo muy suave */
-  border: 1px solid var(--color-error);
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
-  font-weight: 500;
-  font-size: 0.9rem;
 }
 
 /* Inputs y Labels */
@@ -115,7 +107,7 @@ html, body, #root {
 .form-input:focus {
   border-color: var(--color-primary-light);
   /* Un brillo suave azul muy claro cuando haces clic */
-  box-shadow: 0 0 0 3px var(--color-secondary); 
+  box-shadow: 0 0 0 3px var(--color-secondary);
   outline: none;
 }
 
@@ -126,11 +118,13 @@ html, body, #root {
   background-color: var(--color-primary);
   border: none;
   border-radius: 8px;
-  color: #FFFFFF;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
   margin-top: 1rem;
 }
 
@@ -140,4 +134,42 @@ html, body, #root {
 
 .form-button:active {
   transform: scale(0.98);
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container .form-input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+}
+
+.toggle-password:hover {
+  color: #000;
+}
+
+.toggle-password svg {
+  font-size: 18px;
+}
+
+/* Mensaje de error debajo del input (¡Ahora usa tu paleta de colores!) */
+.field-error {
+  display: block;
+  color: var(--color-error);
+  font-size: 13px;
+  margin-top: 5px;
+  font-weight: 500;
 }

@@ -1,0 +1,18 @@
+.visor-layout {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.visor-main-content {
+  min-height: 100vh;
+  margin-left: 240px;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .visor-main-content {
+    margin-left: 0;
+    padding: 24px;
+  }
+}

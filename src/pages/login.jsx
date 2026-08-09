@@ -1,81 +1,149 @@
-import React, { useState } from 'react';
-import './Login.css'; // Importa los estilos específicos para la vista de login
+import React, { useState } from "react";
+import "./Login.css";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast"; // <-- ¡Importamos la magia aquí! 🎈
 
 export default function Login() {
-  // Estados locales para almacenar el usuario/correo, la contraseña y los mensajes de error
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // Función asíncrona que maneja el envío de datos al hacer submit en el formulario
-  const handleLogin = async (e) => {
-    e.preventDefault(); // Evita que el navegador recargue la página por defecto
-    setErrorMsg(''); // Limpia mensajes de error anteriores antes de un nuevo intento
+  const [showPassword, setShowPassword] = useState(false);
 
-    try {
-      // Envía una petición HTTP POST con el fetch hacia el backend de Flask
-      const response = await fetch('http://localhost:5000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json', // Indica que estamos enviando datos en formato JSON
-        },
-        body: JSON.stringify({ email, password }), // Empaqueta las credenciales en texto JSON
-      });
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-      // Espera y procesa la respuesta del servidor transformándola a objeto de JavaScript
-      const data = await response.json();
+  const validateEmail = (value) => {
+    setEmail(value);
 
-      // Si el servidor responde con un código de error (ej. 400 o 401)
-      if (!response.ok) {
-        throw new Error(data.error || 'Credenciales inválidas');
-      }
+    if (!value.trim()) {
+      setEmailError("Debe ingresar un correo.");
+      return;
+    }
 
-      // Guardamos el token en el almacenamiento local del navegador
-      localStorage.setItem('token', data.token || data.access_token);
-      
-      // redireccion a la pag de inicio (ESTO FALTA, NO TOMA LOS DATOS)
-      window.location.href = '/vista_admin/home_admin.jsx'; // O cambia '/' por la ruta de tu página principal
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    } catch (err) {
-      setErrorMsg(err.message);
+    if (!regex.test(value)) {
+      setEmailError("Ingrese un correo válido.");
+    } else {
+      setEmailError("");
     }
   };
 
-  // VISUALIZACION DE LA PAG
+  const validatePassword = (value) => {
+    setPassword(value);
+
+    if (!value.trim()) {
+      setPasswordError("Debe ingresar una contraseña.");
+    } else if (value.length < 8) {
+      setPasswordError("La contraseña debe tener al menos 8 caracteres.");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    if (emailError || passwordError) {
+      toast.error("Corrige los errores antes de continuar.");
+      return;
+    }
+
+    if (!email || !password) {
+      toast.error("Complete todos los campos.");
+      return;
+    }
+
+    // Ponemos un globito de carga mientras espera al servidor
+    const toastId = toast.loading("Iniciando sesión...");
+
+    try {
+      const response = await fetch("http://localhost:5000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Credenciales inválidas");
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // ¡Cambiamos el globito a éxito! ✅
+      toast.success("¡Bienvenido a EmotionLab!", { id: toastId });
+
+      // Esperamos 1.5 segundos para que el usuario alcance a ver el globito verde antes de cambiar de pantalla
+      setTimeout(() => {
+        if (data.user.rol === "admin") {
+          window.location.replace("/admin");
+        } else if (data.user.rol === "teacher") {
+          window.location.replace("/teacher");
+        }
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      // ¡Cambiamos el globito a error! ❌
+      toast.error(err.message || "Error al iniciar sesión", { id: toastId });
+    }
+  };
 
   return (
     <div className="login-page-wrapper">
       <div className="login-card">
-        <h2 className="login-title">Login EmotionLab</h2>
-        <p className="login-subtitle">Ingresa tus credenciales para continuar</p>
-        
-        {errorMsg && (
-          <div className="error-message">
-            {errorMsg}
-          </div>
-        )}
-        
+        <h2 className="login-title">EmotionLab</h2>
+
+        <p className="login-subtitle">
+          Ingresa tus credenciales para continuar
+        </p>
+
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label className="form-label">Usuario</label>
-            <input 
-              type="text" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              placeholder="admin o usuario@gmail.com"
+            <label className="form-label">Correo electrónico</label>
+
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => validateEmail(e.target.value)}
+              placeholder="Ingrese su correo electrónico."
               className="form-input"
+              required
             />
+
+            {emailError && <span className="field-error">{emailError}</span>}
           </div>
 
           <div className="form-group">
             <label className="form-label">Contraseña</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              placeholder="••••••••"
-              className="form-input"
-            />
+
+            <div className="password-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => validatePassword(e.target.value)}
+                placeholder="Ingrese su contraseña."
+                className="form-input"
+              />
+
+              <button
+                type="button"
+                className="toggle-password"
+                onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
+            {passwordError && (
+              <span className="field-error">{passwordError}</span>
+            )}
           </div>
 
           <button type="submit" className="form-button">
