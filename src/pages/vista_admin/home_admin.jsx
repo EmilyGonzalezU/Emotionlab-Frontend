@@ -1,11 +1,10 @@
 import React from "react";
-//se importa ehh el componente de tarjetas q creamos, abajo se llama en <IndicadoresSync />
 import IndicadoresSync from "./IndicadoresSync";
 
 export default function HomeAdmin() {
   return (
-    <div className="home-container">
-      {/* Título un poco más compacto y con tu Azul Marino oficial */}
+    <div>
+      {/* Título */}
       <h1
         style={{
           color: "#17315E",
@@ -16,7 +15,7 @@ export default function HomeAdmin() {
         Panel Principal
       </h1>
 
-      {/* Subtítulo más pegadito arriba y con el gris secundario oficial */}
+      {/* Subtítulo */}
       <p
         style={{
           color: "#64748B",

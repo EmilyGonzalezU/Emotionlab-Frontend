@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import "./Login.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast"; // <-- ¡Importamos la magia aquí! 🎈
+import { useNavigate } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -54,11 +57,10 @@ export default function Login() {
       return;
     }
 
-    // Ponemos un globito de carga mientras espera al servidor
     const toastId = toast.loading("Iniciando sesión...");
 
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch(getApiUrl("/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,21 +79,19 @@ export default function Login() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("rol", data.user.rol);
 
-      // ¡Cambiamos el globito a éxito! ✅
       toast.success("¡Bienvenido a EmotionLab!", { id: toastId });
 
-      // Esperamos 1.5 segundos para que el usuario alcance a ver el globito verde antes de cambiar de pantalla
       setTimeout(() => {
         if (data.user.rol === "admin") {
-          window.location.replace("/admin");
+          navigate("/admin", { replace: true });
         } else if (data.user.rol === "teacher") {
-          window.location.replace("/teacher");
+          navigate("/teacher", { replace: true });
         }
       }, 1500);
     } catch (err) {
       console.error(err);
-      // ¡Cambiamos el globito a error! ❌
       toast.error(err.message || "Error al iniciar sesión", { id: toastId });
     }
   };

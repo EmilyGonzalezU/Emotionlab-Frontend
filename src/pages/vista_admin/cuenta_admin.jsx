@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import "./cuenta_admin.css";
+import { getApiUrl } from "../../config/api.js";
 
 export default function CuentaAdmin() {
   const mountedRef = useRef(false);
@@ -28,7 +29,7 @@ export default function CuentaAdmin() {
     fetchingRef.current = true;
     try {
       const token = localStorage.getItem("token");
-      const respuesta = await fetch("http://localhost:5000/users/me", {
+      const respuesta = await fetch(getApiUrl("/users/me"), {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -158,7 +159,7 @@ export default function CuentaAdmin() {
                 try {
                   const token = localStorage.getItem("token");
                   const respuesta = await fetch(
-                    "http://localhost:5000/users/me/password",
+                    getApiUrl("/users/me/password"),
                     {
                       method: "PATCH",
                       headers: {

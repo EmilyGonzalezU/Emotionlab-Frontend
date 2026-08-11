@@ -5,6 +5,7 @@ import "./sesion_detalle.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { getApiUrl } from "../../config/api.js";
 
 const SesionDetalle = () => {
   const { id } = useParams();
@@ -31,7 +32,7 @@ const SesionDetalle = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const respuesta = await fetch(`http://localhost:5000/sessions/${id}`, {
+      const respuesta = await fetch(getApiUrl(`/sessions/${id}`), {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -229,7 +230,7 @@ const SesionDetalle = () => {
     try {
       const token = localStorage.getItem("token");
       const respuesta = await fetch(
-        `http://localhost:5000/sessions/${id}/name`,
+        getApiUrl(`/sessions/${id}/name`),
         {
           method: "PATCH",
           headers: {

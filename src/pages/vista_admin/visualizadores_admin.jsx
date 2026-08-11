@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "./visualizadores_admin.css";
+import { getApiUrl } from "../../config/api.js";
 
 export default function ListaVisualizadores() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function ListaVisualizadores() {
   const obtenerVisualizadores = async () => {
     try {
       const token = localStorage.getItem("token");
-      const respuesta = await fetch("http://localhost:5000/users", {
+      const respuesta = await fetch(getApiUrl("/users"), {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -60,7 +61,7 @@ export default function ListaVisualizadores() {
   const guardarEdicion = async (uid) => {
     try {
       const token = localStorage.getItem("token");
-      const respuesta = await fetch(`http://localhost:5000/users/${uid}`, {
+      const respuesta = await fetch(getApiUrl(`/users/${uid}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +114,7 @@ export default function ListaVisualizadores() {
                 try {
                   const token = localStorage.getItem("token");
                   const respuesta = await fetch(
-                    `http://localhost:5000/users/${uid}/disable`,
+                    getApiUrl(`/users/${uid}/disable`),
                     {
                       method: "PATCH",
                       headers: {
@@ -177,7 +178,7 @@ export default function ListaVisualizadores() {
                 try {
                   const token = localStorage.getItem("token");
                   const respuesta = await fetch(
-                    `http://localhost:5000/users/${uid}/enable`,
+                    getApiUrl(`/users/${uid}/enable`),
                     {
                       method: "PATCH",
                       headers: {
@@ -241,7 +242,7 @@ export default function ListaVisualizadores() {
                 try {
                   const token = localStorage.getItem("token");
                   const respuesta = await fetch(
-                    `http://localhost:5000/users/${uid}`,
+                    getApiUrl(`/users/${uid}`),
                     {
                       method: "DELETE",
                       headers: {

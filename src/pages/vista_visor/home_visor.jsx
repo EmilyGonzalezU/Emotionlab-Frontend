@@ -8,6 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { getApiUrl } from "../../config/api.js";
 
 export default function HomeTeacher() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function HomeTeacher() {
     fetchingRef.current = true;
     try {
       const token = localStorage.getItem("token");
-      const respuesta = await fetch("http://localhost:5000/sessions", {
+      const respuesta = await fetch(getApiUrl("/sessions"), {
         headers: { Authorization: `Bearer ${token}` },
       });
 

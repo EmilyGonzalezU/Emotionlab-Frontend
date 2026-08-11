@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "./sesiones_visor.css";
+import { getApiUrl } from "../../config/api.js";
 
 const procesarSesionRaw = (item, index) => {
   const fechaRaw = item.updated_at || item.created_at || item.fecha;
@@ -96,7 +97,7 @@ const SesionesVisor = () => {
       setError(null);
 
       const token = localStorage.getItem("token");
-      const respuesta = await fetch("http://localhost:5000/sessions", {
+      const respuesta = await fetch(getApiUrl("/sessions"), {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -139,7 +140,7 @@ const SesionesVisor = () => {
 
       const token = localStorage.getItem("token");
 
-      const respuesta = await fetch("http://localhost:5000/sessions/import", {
+      const respuesta = await fetch(getApiUrl("/sessions/import"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

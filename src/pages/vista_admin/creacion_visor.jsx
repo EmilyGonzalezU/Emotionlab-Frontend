@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "./creacion_visor.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { getApiUrl } from "../../config/api.js";
 
 //LOS NAVIGATE hacen q cambies d pagina sin necesidad de tener q anotarlo con un a
 export default function CrearVisualizador() {
@@ -82,7 +83,7 @@ export default function CrearVisualizador() {
       const token = localStorage.getItem("token");
 
       //se conecta con el backend
-      const respuesta = await fetch("http://localhost:5000/users", {
+      const respuesta = await fetch(getApiUrl("/users"), {
         method: "POST", //post pq creamos un usuario nuevo
         headers: {
           "Content-Type": "application/json", //lo mandamos en formato json

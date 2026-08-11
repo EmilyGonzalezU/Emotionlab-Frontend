@@ -1,9 +1,10 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "./SidebarAdmin.css";
 import toast from "react-hot-toast";
 
 export default function SidebarAdmin() {
+  const navigate = useNavigate();
   const handleLogout = () => {
     toast(
       (t) => (
@@ -23,12 +24,11 @@ export default function SidebarAdmin() {
               onClick={() => {
                 toast.dismiss(t.id);
                 localStorage.clear();
-                window.location.replace("/");
+                navigate("/", { replace: true });
               }}>
               Salir
             </button>
 
-            {/* Botón de NO */}
             <button
               className="btn-cuenta-alerta-cancelar"
               onClick={() => toast.dismiss(t.id)}>
@@ -38,7 +38,7 @@ export default function SidebarAdmin() {
         </div>
       ),
       { duration: 5000 },
-    ); // El globito dura 5 segundos si no responden
+    );
   };
 
   return (

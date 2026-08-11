@@ -1,9 +1,10 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 import toast from "react-hot-toast";
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const handleCerrarSesion = () => {
     toast(
       (t) => (
@@ -23,12 +24,11 @@ const Sidebar = () => {
               onClick={() => {
                 toast.dismiss(t.id);
                 localStorage.clear();
-                window.location.replace("/");
+                navigate("/", { replace: true });
               }}>
               Salir
             </button>
 
-            {/* Botón de NO */}
             <button
               className="btn-cuenta-alerta-cancelar"
               onClick={() => toast.dismiss(t.id)}>
@@ -38,7 +38,7 @@ const Sidebar = () => {
         </div>
       ),
       { duration: 5000 },
-    ); // El globito dura 5 segundos si no responden
+    );
   };
 
   return (
