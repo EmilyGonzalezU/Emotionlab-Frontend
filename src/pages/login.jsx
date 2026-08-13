@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import "./Login.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import toast from "react-hot-toast"; // <-- ¡Importamos la magia aquí! 🎈
-import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useNavigate, Link } from "react-router-dom";
 import { getApiUrl } from "../config/api.js";
 
 export default function Login() {
@@ -145,6 +145,8 @@ export default function Login() {
               <span className="field-error">{passwordError}</span>
             )}
           </div>
+
+          <Link to="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link>
 
           <button type="submit" className="form-button">
             Ingresar

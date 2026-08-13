@@ -3,6 +3,8 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 
 import Alertas from "./components/alertas.jsx";
 import RutaProtegida from "./components/rutaProtegida.jsx";
+import ForgotPassword from './components/forgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 // ADMIN
 import Login from "./pages/login.jsx";
@@ -26,6 +28,8 @@ function App() {
         <Routes>
           {/* LOGIN */}
           <Route path="/" element={<Login />} />
+          <Route path="/recuperar-contrasena" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* =========================
               ADMIN
