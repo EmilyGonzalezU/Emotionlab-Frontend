@@ -149,6 +149,9 @@ const SesionDetalle = () => {
     sesionData?.observaciones ||
     "El participante muestra capacidad de autorregulación emocional";
 
+  const textoAvisoIA =
+    "Aviso: Este diagnóstico es una estimación generada por Inteligencia Artificial. Utilice este indicador como apoyo complementario y verifique los resultados mediante la evaluación profesional correspondiente.";
+
   // Datos del Alumno y Sesión
   const nombreAlumno =
     sesionData?.nombre ||
@@ -199,13 +202,11 @@ const SesionDetalle = () => {
   const handleCambioNuevoNombreAlumno = (e) => {
     const val = e.target.value;
 
-    // Regla 1: Máximo 25 caracteres
     if (val.length > 25) {
       setErrorNombreAlumno("El nombre no puede superar los 25 caracteres.");
       return;
     }
 
-    // Regla 2: Solo letras, números y espacios
     const regexValida = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]*$/;
     if (!regexValida.test(val)) {
       setErrorNombreAlumno("No se permiten caracteres especiales.");
@@ -244,7 +245,6 @@ const SesionDetalle = () => {
       const resData = await respuesta.json().catch(() => ({}));
 
       if (respuesta.ok) {
-        // Actualizar estado local
         setSesionData((prev) => ({
           ...prev,
           nombre: nuevoNombreAlumno.trim(),
@@ -272,7 +272,7 @@ const SesionDetalle = () => {
   };
 
   // =========================================================
-  // EXPORTAR A PDF
+  // EXPORTAR A PDF (CON AVISO IA)
   // =========================================================
   const handleExportPDF = () => {
     try {
@@ -325,6 +325,7 @@ const SesionDetalle = () => {
           ["Estado de Bienestar", resultadoPrediccion],
           ["Confianza del Modelo", confianzaModelo],
           ["Observaciones", observacionesIA],
+          ["Aviso de Responsabilidad", textoAvisoIA],
         ],
       });
 
@@ -380,7 +381,7 @@ const SesionDetalle = () => {
   };
 
   // =========================================================
-  // EXPORTAR A EXCEL
+  // EXPORTAR A EXCEL (CON AVISO IA)
   // =========================================================
   const handleExportExcel = () => {
     try {
@@ -402,6 +403,7 @@ const SesionDetalle = () => {
         { Métrica: "Estado de Bienestar", Valor: resultadoPrediccion },
         { Métrica: "Confianza del Modelo", Valor: confianzaModelo },
         { Métrica: "Observaciones Modelo", Valor: observacionesIA },
+        { Métrica: "Aviso de Responsabilidad", Valor: textoAvisoIA },
       ];
 
       const respuestasData = respuestas.map((r, index) => ({
@@ -498,7 +500,6 @@ const SesionDetalle = () => {
             <div className="card-seccion">
               <h3 className="card-titulo">Datos del Alumno y Sesión</h3>
               <div className="grid-datos-alumno">
-                {/* NOMBRE DEL ALUMNO CON LÁPIZ DE EDICIÓN A LA DERECHA */}
                 <div className="dato-item">
                   <div className="etiqueta-con-lapiz-alumno">
                     <span
@@ -590,7 +591,7 @@ const SesionDetalle = () => {
               </div>
             </div>
 
-            {/* SECCIÓN 2: ESTADO DE BIENESTAR (TARJETA ÚNICA CENTRALIZADA) */}
+            {/* SECCIÓN 2: ESTADO DE BIENESTAR */}
             <div className="card-seccion">
               <h3 className="card-titulo">Estado de Bienestar</h3>
               <div className="grid-prediccion">
@@ -612,6 +613,22 @@ const SesionDetalle = () => {
 
                   <div className="prediccion-observacion-sub">
                     {observacionesIA}
+                  </div>
+
+                  {/* AVISO DE IA EN PANTALLA */}
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      padding: "8px 12px",
+                      backgroundColor: "#FFFBEB",
+                      border: "1px solid #FCD34D",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      color: "#92400E",
+                      textAlign: "center",
+                      lineHeight: "1.4",
+                    }}>
+                    ℹ️ <strong>Aviso:</strong> {textoAvisoIA}
                   </div>
                 </div>
               </div>
