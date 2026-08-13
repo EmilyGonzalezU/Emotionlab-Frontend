@@ -5,7 +5,7 @@ import "./sesiones_visor.css";
 import { getApiUrl } from "../../config/api.js";
 
 const procesarSesionRaw = (item, index) => {
-  const fechaRaw = item.updated_at || item.created_at || item.fecha;
+  const fechaRaw = item.created_at || item.fecha_inicio || item.fecha || item.updated_at;
   const objetoFecha = fechaRaw ? new Date(fechaRaw) : null;
 
   const fechaTexto = objetoFecha
@@ -24,6 +24,7 @@ const procesarSesionRaw = (item, index) => {
     : "";
 
   const cursoRaw = item.curso || item.course || "Curso no asignado";
+  const fechaISO = objetoFecha ? objetoFecha.toISOString().split("T")[0] : "";
 
   return {
     id: item.id || item.session_id || `SES-${index + 1}`,
@@ -31,6 +32,7 @@ const procesarSesionRaw = (item, index) => {
     fechaRaw: objetoFecha,
     fechaFormateada: `${fechaTexto} ${horaTexto}`.trim(),
     fechaComparar: fechaTexto.replaceAll("/", "-"),
+    fechaISO: fechaISO,
     curso: cursoRaw,
     cursoNormalizado: cursoRaw.toLowerCase().trim(),
     genero: item.genero || item.gender || item.participante_genero || "",
@@ -114,9 +116,12 @@ const SesionesVisor = () => {
       listaProcesada.sort((a, b) => (b.fechaRaw || 0) - (a.fechaRaw || 0));
 
       if (fechaFiltroUrl) {
-        listaProcesada = listaProcesada.filter(
-          (s) => s.fechaComparar === fechaFiltroUrl,
-        );
+        const fTarget = fechaFiltroUrl.replaceAll("/", "-").trim();
+        listaProcesada = listaProcesada.filter((s) => {
+          const fComp = (s.fechaComparar || "").replaceAll("/", "-").trim();
+          const fISO = s.fechaISO;
+          return fComp === fTarget || fISO === fTarget;
+        });
       }
 
       setSesionesOriginales(listaProcesada);

@@ -15,6 +15,16 @@ export default function ListaVisualizadores() {
     rol: "",
   });
 
+  // Función formateadora para transformar "admin" -> "Administrador" y "teacher" -> "Visualizador"
+  const obtenerNombreRol = (rol) => {
+    const rolLower = String(rol || "").toLowerCase().trim();
+    if (rolLower === "admin") return "Administrador";
+    if (rolLower === "teacher" || rolLower === "visor" || rolLower === "visualizador") {
+      return "Visualizador";
+    }
+    return rol;
+  };
+
   useEffect(() => {
     obtenerVisualizadores();
   }, []);
@@ -343,7 +353,7 @@ export default function ListaVisualizadores() {
                           onChange={handleChangeEdicion}
                           className="input-buscador"
                           style={{ padding: "6px 10px" }}>
-                          <option value="visualizador">Visualizador</option>
+                          <option value="teacher">Visualizador</option>
                           <option value="admin">Administrador</option>
                         </select>
                       </td>
@@ -373,7 +383,9 @@ export default function ListaVisualizadores() {
                       <td className="fw-bold">{visor.nombre}</td>
                       <td>{visor.email}</td>
                       <td>
-                        <span className="badge-rol">{visor.rol}</span>
+                        <span className="badge-rol">
+                          {obtenerNombreRol(visor.rol)}
+                        </span>
                       </td>
                       <td>
                         <span

@@ -39,19 +39,33 @@ export default function HomeTeacher() {
         const gruposFecha = {};
 
         sesiones.forEach((sesion) => {
+          // Extraer el valor de bienestar buscando en todas las ubicaciones posibles
+          const valorBienestar =
+            sesion.bienestar ??
+            sesion.prediction?.bienestar ??
+            sesion.prediction?.prediccion ??
+            sesion.prediction?.resultado ??
+            sesion.prediction_result;
+
+          // Evaluar si está pendiente de predicción o viene nulo
           if (
-            sesion.bienestar === null ||
-            sesion.bienestar === undefined ||
-            sesion.bienestar === ""
+            valorBienestar === null ||
+            valorBienestar === undefined ||
+            valorBienestar === "" ||
+            sesion.status === "pending_prediction" ||
+            sesion.estado === "pending_prediction"
           ) {
             contadorPendiente++;
           } else {
-            const bienestar = String(sesion.bienestar).toLowerCase();
+            const bienestarStr = String(valorBienestar).toLowerCase().trim();
+
             if (
-              bienestar === "sí" ||
-              bienestar === "si" ||
-              bienestar === "true" ||
-              bienestar === "alto bienestar"
+              bienestarStr === "sí" ||
+              bienestarStr === "si" ||
+              bienestarStr === "true" ||
+              bienestarStr === "1" ||
+              bienestarStr === "alto bienestar" ||
+              bienestarStr === "alto"
             ) {
               contadorSi++;
             } else {
@@ -59,10 +73,37 @@ export default function HomeTeacher() {
             }
           }
 
-          const fechaRaw = sesion.updated_at || sesion.created_at;
+          // Priorizar la fecha de creación o de inicio para evitar alteraciones por 'updated_at'
+          const fechaRaw =
+            sesion.created_at ||
+            sesion.fecha_inicio ||
+            sesion.fecha ||
+            sesion.updated_at;
+
           if (fechaRaw) {
-            const fechaStr = new Date(fechaRaw).toLocaleDateString("es-CL");
-            gruposFecha[fechaStr] = (gruposFecha[fechaStr] || 0) + 1;
+            const objFecha = new Date(fechaRaw);
+            if (!isNaN(objFecha.getTime())) {
+              // Clave ISO para ordenamiento exacto (YYYY-MM-DD)
+              const fechaISO = objFecha.toISOString().split("T")[0];
+
+              // Formato visual para mostrar en la tabla (DD-MM-YYYY)
+              const fechaMostrar = objFecha
+                .toLocaleDateString("es-CL", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
+                .replaceAll("/", "-");
+
+              if (!gruposFecha[fechaISO]) {
+                gruposFecha[fechaISO] = {
+                  fechaISO: fechaISO,
+                  fechaMostrar: fechaMostrar,
+                  total: 0,
+                };
+              }
+              gruposFecha[fechaISO].total += 1;
+            }
           }
         });
 
@@ -76,10 +117,10 @@ export default function HomeTeacher() {
           },
         ].filter((item) => item.value > 0);
 
-        const datosTabla = Object.keys(gruposFecha).map((fecha) => ({
-          fecha: fecha,
-          total: gruposFecha[fecha],
-        }));
+        // Convertir el objeto de grupos a lista y ordenar descendentemente (del día más reciente al más antiguo)
+        const datosTabla = Object.values(gruposFecha).sort(
+          (a, b) => new Date(b.fechaISO) - new Date(a.fechaISO)
+        );
 
         setEstado({
           cargando: false,
@@ -103,12 +144,9 @@ export default function HomeTeacher() {
     obtenerDatos();
   }, [obtenerDatos]);
 
-  // Función para cuando hagan clic en una fila de la tabla
-  const irADetalleDia = (fecha) => {
-    // Convierte slashes "08/08/2026" a guiones "08-08-2026"
-    const fechaUrl = fecha.replaceAll("/", "-");
-    // Redirige a la vista de sesiones filtrando por el parámetro de consulta ?fecha=
-    navigate(`/teacher/sesiones?fecha=${fechaUrl}`);
+  // Redirección usando el formato ISO de fecha
+  const irADetalleDia = (fechaISO) => {
+    navigate(`/teacher/sesiones?fecha=${fechaISO}`);
   };
 
   return (
@@ -162,13 +200,13 @@ export default function HomeTeacher() {
                       </td>
                     </tr>
                   ) : (
-                    estado.sesionesPorDia.map((item, index) => (
+                    estado.sesionesPorDia.map((item) => (
                       <tr
-                        key={index}
-                        onClick={() => irADetalleDia(item.fecha)}
+                        key={item.fechaISO}
+                        onClick={() => irADetalleDia(item.fechaISO)}
                         style={{ cursor: "pointer" }}>
                         <td style={{ fontWeight: "bold", color: "#17315E" }}>
-                          {item.fecha}
+                          {item.fechaMostrar}
                         </td>
                         <td>
                           <span

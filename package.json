@@ -3,9 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-
   "main": "electron/main.cjs",
-
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,7 +13,6 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-devtools": "^5.101.4",
@@ -29,7 +26,6 @@
     "recharts": "^3.10.1",
     "xlsx": "^0.18.5"
   },
-
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@types/react": "^19.1.2",
@@ -46,35 +42,30 @@
   "build": {
     "appId": "cl.emotionlab.desktop",
     "productName": "EmotionLab",
-
     "directories": {
       "output": "release"
     },
-
     "files": [
       "electron/**/*",
       "dist/**/*",
       "package.json"
     ],
-
-   "extraResources": [
-    {
-      "from": "packaging/backend",
-      "to": "backend"
-    },
-    {
-      "from": "packaging/config",
-      "to": "config"
-    }
-  ],
-
+    "extraResources": [
+      {
+        "from": "packaging/backend",
+        "to": "backend"
+      },
+      {
+        "from": "packaging/config",
+        "to": "config"
+      }
+    ],
     "win": {
       "target": [
         "nsis"
       ],
       "executableName": "EmotionLab"
     },
-
     "nsis": {
       "oneClick": false,
       "perMachine": false,
