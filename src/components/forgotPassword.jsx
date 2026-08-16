@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast'; 
 import './forgotPassword.css';
+import { Link } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -51,7 +52,7 @@ const ForgotPassword = () => {
       <div className="login-card">
         <h2>Recuperar Contraseña</h2>
         <p className="forgot-description">
-          Ingresa tu correo y te enviaremos un enlace para recuperar tu acceso (por carpeta SPAM)
+          Si el correo está en nuestro sistema, te enviaremos un enlace de recuperación (si no lo ves, revisa SPAM)
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -77,9 +78,9 @@ const ForgotPassword = () => {
         </form>
 
         <div className="back-login-container">
-          <a href="/login" className="back-login-link">
-            Volver al Login
-          </a>
+        <Link to="/" className="back-login-link">
+          Volver
+        </Link>
         </div>
       </div>
     </div>
