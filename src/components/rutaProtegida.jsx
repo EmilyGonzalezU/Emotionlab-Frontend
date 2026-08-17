@@ -18,7 +18,7 @@ export default function RutaProtegida({ children, rolPermitido }) {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       rolUsuario = payload.rol || payload.role; // Dependiendo de cómo lo llame tu backend
-    } catch (e) {
+    } catch {
       console.error("No se pudo leer el rol del token");
     }
   }

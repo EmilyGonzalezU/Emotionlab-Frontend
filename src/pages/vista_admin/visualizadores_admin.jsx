@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "./visualizadores_admin.css";
@@ -16,6 +16,9 @@ export default function ListaVisualizadores() {
     rol: "",
   });
 
+  const mountedRef = useRef(false);
+  const fetchingRef = useRef(false);
+
   // Función formateadora para transformar "admin" -> "Administrador" y "teacher" -> "Visualizador"
   const obtenerNombreRol = (rol) => {
     const rolLower = String(rol || "").toLowerCase().trim();
@@ -26,12 +29,11 @@ export default function ListaVisualizadores() {
     return rol;
   };
 
-  useEffect(() => {
-    obtenerVisualizadores();
-  }, []);
-
-  const obtenerVisualizadores = async () => {
+  const obtenerVisualizadores = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
+      if (!mountedRef.current) return;
       const token = localStorage.getItem("token");
       const respuesta = await fetch(getApiUrl("/users"), {
         method: "GET",
@@ -42,11 +44,25 @@ export default function ListaVisualizadores() {
       });
       if (!respuesta.ok) throw new Error(`Error: ${respuesta.status}`);
       const dataReales = await respuesta.json();
-      setVisualizadores(dataReales);
+      if (mountedRef.current) {
+        setVisualizadores(dataReales);
+      }
     } catch (error) {
-      console.error("Error con el backend:", error);
+      if (mountedRef.current) {
+        console.error("Error con el backend:", error);
+      }
+    } finally {
+      fetchingRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    obtenerVisualizadores();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [obtenerVisualizadores]);
 
   const visualizadoresFiltrados = visualizadores.filter((visor) => {
     const textoBuscado = busqueda.toLowerCase();
@@ -303,7 +319,9 @@ export default function ListaVisualizadores() {
       const payload = JSON.parse(atob(token.split(".")[1]));
       miUid = payload.sub || payload.identity || payload.uid;
     }
-  } catch (e) {}
+  } catch {
+    // Token mal formado o no base64 válido → miUid queda null.
+  }
 
   return (
     <div className="contenedor-tabla-admin">

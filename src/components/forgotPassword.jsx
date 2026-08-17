@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-hot-toast'; 
 import './forgotPassword.css';
 import { Link } from "react-router-dom";
+import { getApiUrl } from "../config/api.js";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -23,7 +24,7 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/auth/forgot-password', {
+      const response = await fetch(getApiUrl('/auth/forgot-password'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

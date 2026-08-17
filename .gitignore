@@ -1,16 +1,43 @@
 node_modules/
 dist/
+build/
 release/
 
-packaging/backend/
+# Backend empaquetado y configuración con secretos (NUNCA subir a Git)
+packaging/backend/**
 packaging/config/.env
 packaging/config/firebase_key.json
+packaging/config/*.p12
+packaging/config/*.json
 
+# Secretos locales
 .env
-*.env
-
+.env.local
+.env.*.local
 firebase_key.json
-**/firebase_key.json
+*.p12
+credentials/
 
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Vite
+.vite/
+

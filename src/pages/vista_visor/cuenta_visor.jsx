@@ -195,7 +195,7 @@ export default function CuentaVisor() {
                       duration: 3000,
                     });
                   }
-                } catch (error) {
+                } catch {
                   toast.error("Error de conexión con el servidor.", {
                     duration: 3000,
                   });

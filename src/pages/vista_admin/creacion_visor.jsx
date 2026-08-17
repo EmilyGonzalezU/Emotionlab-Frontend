@@ -100,7 +100,7 @@ export default function CrearVisualizador() {
         try {
           const errorData = await respuesta.json();
           if (errorData.error) mensajeError = errorData.error;
-        } catch (e) {
+        } catch {
           console.warn("El backend devolvió un error sin formato JSON.");
         }
 
