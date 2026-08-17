@@ -100,7 +100,7 @@ const [showPassword, setShowPassword] = useState(false);
         
         setClaves({ nueva: "", confirmar: "" });
         setTimeout(() => {
-          navigate.replace("/");
+          navigate("/", { replace: true });
         }, 2000);
 
       } else {
@@ -121,7 +121,7 @@ const [showPassword, setShowPassword] = useState(false);
           <p>No se encontró el código de seguridad. Por favor, solicita un nuevo enlace de recuperación.</p>
           <button
             type="button"
-            onClick={() => navigate("/recuperar-contrasena")}
+            onClick={() => navigate('/login', { replace: true })}
             style={{
               color: "#007bff",
               textDecoration: "none",
