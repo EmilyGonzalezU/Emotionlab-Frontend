@@ -186,7 +186,7 @@ export default function CuentaAdmin() {
                       duration: 5000,
                     });
                   }
-                } catch (error) {
+                } catch {
                   toast.error("Error de conexión con el servidor.", {
                     duration: 5000,
                   });

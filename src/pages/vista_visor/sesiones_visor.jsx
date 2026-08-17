@@ -4,27 +4,74 @@ import toast from "react-hot-toast";
 import "./sesiones_visor.css";
 import { getApiUrl } from "../../config/api.js";
 
-const procesarSesionRaw = (item, index) => {
-  const fechaRaw = item.created_at || item.fecha_inicio || item.fecha || item.updated_at;
-  const objetoFecha = fechaRaw ? new Date(fechaRaw) : null;
+// ============================================================
+// NORMALIZAR GÉNERO
+// ============================================================
+// Permite comparar correctamente valores como:
+// "No binario", "no binario", "NO BINARIO", "No  Binario"
+// También elimina diferencias por tildes.
+// ============================================================
+const normalizarGenero = (valor) =>
+  (valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 
+const procesarSesionRaw = (item, index) => {
+  // Fecha real de la sesión.
+  // created_at corresponde a la importación y no debe utilizarse.
+  const fechaSesion = item.fecha || "";
+  const horaSesion = item.hora || "";
+
+  // Obtener fecha en formato YYYY-MM-DD.
+  const fechaISO = fechaSesion ? String(fechaSesion).split("T")[0].slice(0, 10) : "";
+
+  // Crear fecha local para evitar problemas de zona horaria.
+  let objetoFecha = null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) {
+    let horaNormalizada = String(horaSesion || "00:00:00");
+
+    if (/^\d{2}:\d{2}$/.test(horaNormalizada)) {
+      horaNormalizada += ":00";
+    }
+
+    if (!/^\d{2}:\d{2}:\d{2}$/.test(horaNormalizada)) {
+      horaNormalizada = "00:00:00";
+    }
+
+    const fechaConstruida = new Date(`${fechaISO}T${horaNormalizada}`);
+    if (!Number.isNaN(fechaConstruida.getTime())) {
+      objetoFecha = fechaConstruida;
+    }
+  }
+
+  // Fecha visible.
   const fechaTexto = objetoFecha
     ? objetoFecha.toLocaleDateString("es-CL", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       })
-    : "Sin fecha";
+    : fechaISO
+      ? `${fechaISO.slice(8, 10)}/${fechaISO.slice(5, 7)}/${fechaISO.slice(0, 4)}`
+      : "Sin fecha";
 
-  const horaTexto = objetoFecha
-    ? objetoFecha.toLocaleTimeString("es-CL", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
+  // Hora visible.
+  const horaTexto = horaSesion
+    ? String(horaSesion).slice(0, 5)
+    : objetoFecha
+      ? objetoFecha.toLocaleTimeString("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      : "";
 
+  // Curso.
   const cursoRaw = item.curso || item.course || "Curso no asignado";
-  const fechaISO = objetoFecha ? objetoFecha.toISOString().split("T")[0] : "";
 
   return {
     id: item.id || item.session_id || `SES-${index + 1}`,
@@ -45,55 +92,36 @@ const SesionesVisor = () => {
   const fetchingRef = useRef(false);
 
   const [sesionesOriginales, setSesionesOriginales] = useState([]);
-  const [sesionesFiltradas, setSesionesFiltradas] = useState([]);
-
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-
   const [importando, setImportando] = useState(false);
   const [mensajeImportacion, setMensajeImportacion] = useState("");
   const [tipoMensajeImportacion, setTipoMensajeImportacion] = useState("");
-
   const [menuFiltrosAbierto, setMenuFiltrosAbierto] = useState(false);
   const [submenúAbierto, setSubmenúAbierto] = useState(null);
-
   const [filtroGenero, setFiltroGenero] = useState("");
   const [filtroCurso, setFiltroCurso] = useState("");
-
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-
   const [modalBusquedaAbierta, setModalBusquedaAbierta] = useState(false);
   const [busquedaId, setBusquedaId] = useState("");
-
   const [paginaActual, setPaginaActual] = useState(1);
 
   const sesionesPorPagina = 8;
 
-  const [cursosDisponibles, setCursosDisponibles] = useState([]);
-
-  const opcionesGenero = ["Femenino", "Masculino", "Prefiero no decir"];
+  // Opciones disponibles para el filtro de género.
+  const opcionesGenero = ["Femenino", "Masculino", "No binario", "Prefiero no decir"];
 
   const [searchParams] = useSearchParams();
   const fechaFiltroUrl = searchParams.get("fecha");
 
-  const actualizarCursosYFiltros = useCallback((lista) => {
-    const cursosUnicos = [];
-    const cursosVistos = new Set();
-    lista.forEach((s) => {
-      const clave = s.cursoNormalizado;
-      if (!cursosVistos.has(clave) && clave !== "curso no asignado") {
-        cursosVistos.add(clave);
-        cursosUnicos.push(s.curso);
-      }
-    });
-    setCursosDisponibles(cursosUnicos);
-    setSesionesFiltradas(lista);
-  }, []);
-
+  // ============================================================
+  // OBTENER SESIONES
+  // ============================================================
   const obtenerSesiones = useCallback(async () => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
+
     try {
       setCargando(true);
       setError(null);
@@ -112,20 +140,25 @@ const SesionesVisor = () => {
       }
 
       const data = await respuesta.json();
-      let listaProcesada = data.map((item, index) => procesarSesionRaw(item, index));
-      listaProcesada.sort((a, b) => (b.fechaRaw || 0) - (a.fechaRaw || 0));
 
+      // Procesar y ordenar sesiones.
+      let listaProcesada = data.map((item, index) => procesarSesionRaw(item, index));
+
+      listaProcesada.sort(
+        (a, b) => (b.fechaRaw?.getTime() || 0) - (a.fechaRaw?.getTime() || 0)
+      );
+
+      // Si se abrió esta vista desde el panel principal,
+      // mostrar solamente la fecha seleccionada.
       if (fechaFiltroUrl) {
         const fTarget = fechaFiltroUrl.replaceAll("/", "-").trim();
         listaProcesada = listaProcesada.filter((s) => {
           const fComp = (s.fechaComparar || "").replaceAll("/", "-").trim();
-          const fISO = s.fechaISO;
-          return fComp === fTarget || fISO === fTarget;
+          return fComp === fTarget || s.fechaISO === fTarget;
         });
       }
 
       setSesionesOriginales(listaProcesada);
-      actualizarCursosYFiltros(listaProcesada);
     } catch (err) {
       console.error("Error en el fetch:", err);
       setError("No se pudieron obtener las sesiones.");
@@ -133,10 +166,14 @@ const SesionesVisor = () => {
       setCargando(false);
       fetchingRef.current = false;
     }
-  }, [fechaFiltroUrl, actualizarCursosYFiltros]);
+  }, [fechaFiltroUrl]);
 
+  // ============================================================
+  // IMPORTAR SESIONES
+  // ============================================================
   const importarSesiones = async () => {
     if (importando) return;
+
     try {
       setImportando(true);
       setMensajeImportacion("");
@@ -144,7 +181,6 @@ const SesionesVisor = () => {
       setError(null);
 
       const token = localStorage.getItem("token");
-
       const respuesta = await fetch(getApiUrl("/sessions/import"), {
         method: "POST",
         headers: {
@@ -179,16 +215,14 @@ const SesionesVisor = () => {
         0;
 
       if (cantidadNuevas > 0) {
-        setMensajeImportacion(
-          `Se importaron ${cantidadNuevas} sesiones nuevas.`,
-        );
+        setMensajeImportacion(`Se importaron ${cantidadNuevas} sesiones nuevas.`);
         setTipoMensajeImportacion("exito");
         toast.success(`¡${cantidadNuevas} sesiones nuevas importadas!`);
       } else {
         setMensajeImportacion(
           cantSkip > 0
             ? `No hay sesiones nuevas (${cantSkip} ya existentes).`
-            : "No hay sesiones nuevas para importar.",
+            : "No hay sesiones nuevas para importar."
         );
         setTipoMensajeImportacion("info");
       }
@@ -196,14 +230,18 @@ const SesionesVisor = () => {
       await obtenerSesiones();
     } catch (error) {
       console.error("Error importando sesiones:", error);
-      setMensajeImportacion(error.message || "Error al importar las sesiones.");
+      const mensaje = error.message || "Error al importar las sesiones.";
+      setMensajeImportacion(mensaje);
       setTipoMensajeImportacion("error");
-      toast.error(error.message || "Error al importar las sesiones.");
+      toast.error(mensaje);
     } finally {
       setImportando(false);
     }
   };
 
+  // ============================================================
+  // CARGA INICIAL
+  // ============================================================
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
@@ -211,133 +249,110 @@ const SesionesVisor = () => {
   }, [obtenerSesiones]);
 
   // ============================================================
+  // CURSOS DISPONIBLES
+  // ============================================================
+  const cursosDisponibles = useMemo(() => {
+    const cursosUnicos = [];
+    const cursosVistos = new Set();
+
+    sesionesOriginales.forEach((s) => {
+      const clave = s.cursoNormalizado;
+      if (!cursosVistos.has(clave) && clave !== "curso no asignado") {
+        cursosVistos.add(clave);
+        cursosUnicos.push(s.curso);
+      }
+    });
+
+    return cursosUnicos;
+  }, [sesionesOriginales]);
+
+  // ============================================================
   // APLICAR FILTROS + BÚSQUEDA
   // ============================================================
+  const sesionesFiltradas = useMemo(() => {
+    let resultado = sesionesOriginales;
 
-  useEffect(() => {
-    let resultado = [...sesionesOriginales];
-
-    // ==========================================================
-    // BÚSQUEDA POR ID
-    // ==========================================================
-
+    // --------------------------------------------------------
+    // Búsqueda por ID
+    // --------------------------------------------------------
     if (busquedaId.trim()) {
-      resultado = resultado.filter((s) =>
-        s.id.toLowerCase().includes(busquedaId.toLowerCase().trim()),
-      );
+      const term = busquedaId.toLowerCase().trim();
+      resultado = resultado.filter((s) => s.id.toLowerCase().includes(term));
     }
 
-    // ==========================================================
-    // FILTRO GÉNERO
-    // ==========================================================
-
+    // --------------------------------------------------------
+    // Filtro por género
+    // --------------------------------------------------------
     if (filtroGenero) {
+      const generoSeleccionado = normalizarGenero(filtroGenero);
       resultado = resultado.filter(
-        (s) =>
-          s.genero.toLowerCase().trim() === filtroGenero.toLowerCase().trim(),
+        (s) => normalizarGenero(s.genero) === generoSeleccionado
       );
     }
 
-    // ==========================================================
-    // FILTRO CURSO
-    // ==========================================================
-
+    // --------------------------------------------------------
+    // Filtro por curso
+    // --------------------------------------------------------
     if (filtroCurso) {
-      resultado = resultado.filter(
-        (s) => s.cursoNormalizado === filtroCurso.toLowerCase().trim(),
-      );
+      const curso = filtroCurso.toLowerCase().trim();
+      resultado = resultado.filter((s) => s.cursoNormalizado === curso);
     }
 
-    // ==========================================================
-    // FECHA DESDE
-    // ==========================================================
-
+    // --------------------------------------------------------
+    // Filtro por fecha desde
+    // --------------------------------------------------------
     if (fechaDesde) {
       const desdeDate = new Date(`${fechaDesde}T00:00:00`);
-
-      resultado = resultado.filter(
-        (s) => s.fechaRaw && s.fechaRaw >= desdeDate,
-      );
+      resultado = resultado.filter((s) => s.fechaRaw && s.fechaRaw >= desdeDate);
     }
 
-    // ==========================================================
-    // FECHA HASTA
-    // ==========================================================
-
+    // --------------------------------------------------------
+    // Filtro por fecha hasta
+    // --------------------------------------------------------
     if (fechaHasta) {
       const hastaDate = new Date(`${fechaHasta}T23:59:59`);
-
-      resultado = resultado.filter(
-        (s) => s.fechaRaw && s.fechaRaw <= hastaDate,
-      );
+      resultado = resultado.filter((s) => s.fechaRaw && s.fechaRaw <= hastaDate);
     }
 
-    // ==========================================================
-    // ACTUALIZAR
-    // ==========================================================
+    return resultado;
+  }, [busquedaId, filtroGenero, filtroCurso, fechaDesde, fechaHasta, sesionesOriginales]);
 
-    setSesionesFiltradas(resultado);
-
+  // Reiniciar página cuando cambian los filtros.
+  useEffect(() => {
     setPaginaActual(1);
-  }, [
-    busquedaId,
-    filtroGenero,
-    filtroCurso,
-    fechaDesde,
-    fechaHasta,
-    sesionesOriginales,
-  ]);
+  }, [busquedaId, filtroGenero, filtroCurso, fechaDesde, fechaHasta]);
 
   // ============================================================
   // LIMPIAR FILTROS
   // ============================================================
-
   const limpiarFiltros = () => {
     setFiltroGenero("");
-
     setFiltroCurso("");
-
     setFechaDesde("");
-
     setFechaHasta("");
-
     setSubmenúAbierto(null);
-
     setMenuFiltrosAbierto(false);
   };
 
   // ============================================================
   // PAGINACIÓN
   // ============================================================
-
-  const totalPaginas = Math.ceil(sesionesFiltradas.length / sesionesPorPagina);
-
+  const totalPaginas = Math.ceil(sesionesFiltradas.length / sesionesPorPagina) || 1;
   const indiceUltimaSesion = paginaActual * sesionesPorPagina;
-
   const indicePrimeraSesion = indiceUltimaSesion - sesionesPorPagina;
-
-  const sesionesPaginadas = sesionesFiltradas.slice(
-    indicePrimeraSesion,
-    indiceUltimaSesion,
-  );
+  const sesionesPaginadas = sesionesFiltradas.slice(indicePrimeraSesion, indiceUltimaSesion);
 
   // ============================================================
   // FILTROS ACTIVOS
   // ============================================================
-
-  const hayFiltrosActivos =
-    filtroGenero || filtroCurso || fechaDesde || fechaHasta;
+  const hayFiltrosActivos = filtroGenero || filtroCurso || fechaDesde || fechaHasta;
 
   // ============================================================
   // RENDER
   // ============================================================
-
   return (
     <div className="sesiones-main-content">
-      {/* ======================================================
-          HEADER
-         ====================================================== */}
-
+      {/* HEADER */}
       <header className="sesiones-header">
         <h2>
           {fechaFiltroUrl
@@ -345,150 +360,89 @@ const SesionesVisor = () => {
             : "Todas las fechas de las sesiones"}
         </h2>
 
-        {/* ====================================================
-            ACCIONES
-           ==================================================== */}
-
         <div className="acciones-header">
-          {/* ==================================================
-              BOTÓN IMPORTAR NUEVAS SESIONES
-             ================================================== */}
-
+          {/* Importar nuevas sesiones */}
           <button
             className="btn-importar-sesiones"
             onClick={importarSesiones}
             disabled={importando}
-            title={"Buscar nuevas sesiones en AWS"}>
+            title="Buscar nuevas sesiones en AWS"
+          >
             {importando ? "⏳ Importando..." : "⬇ Importar nuevas sesiones"}
           </button>
 
-          {/* ==================================================
-              MENSAJE DE IMPORTACIÓN
-             ================================================== */}
-
+          {/* Mensaje de importación */}
           {mensajeImportacion && (
             <span className={`mensaje-importacion ${tipoMensajeImportacion}`}>
               {mensajeImportacion}
             </span>
           )}
 
-          {/* ==================================================
-              BOTÓN BÚSQUEDA POR ID
-             ================================================== */}
-
+          {/* Buscar por ID */}
           <button
             className={`btn-lupa ${busquedaId ? "activo" : ""}`}
             onClick={() => setModalBusquedaAbierta(true)}
-            title="Buscar por ID">
+            title="Buscar por ID"
+          >
             🔍
           </button>
 
-          {/* ==================================================
-              MENÚ FILTROS
-             ================================================== */}
-
+          {/* Menú de filtros */}
           <div className="filtros-wrapper">
             <button
               className={`btn-filtros ${menuFiltrosAbierto ? "activo" : ""}`}
               onClick={() => {
                 setMenuFiltrosAbierto(!menuFiltrosAbierto);
-
                 setSubmenúAbierto(null);
-              }}>
-              Filtros
-              {hayFiltrosActivos && " •"}
+              }}
+            >
+              Filtros{hayFiltrosActivos && " •"}
             </button>
 
             {menuFiltrosAbierto && (
               <div className="dropdown-filtros">
                 <div className="dropdown-menu-principal">
-                  {/* ================================
-                      FECHA
-                     ================================= */}
-
+                  {/* Filtro por fecha */}
                   <div
-                    className={`dropdown-item ${
-                      submenúAbierto === "fecha" ? "seleccionado" : ""
-                    }`}
-                    onClick={() =>
-                      setSubmenúAbierto(
-                        submenúAbierto === "fecha" ? null : "fecha",
-                      )
-                    }>
-                    <span>
-                      Por Fecha
-                      {(fechaDesde || fechaHasta) && " ✓"}
-                    </span>
-
+                    className={`dropdown-item ${submenúAbierto === "fecha" ? "seleccionado" : ""}`}
+                    onClick={() => setSubmenúAbierto(submenúAbierto === "fecha" ? null : "fecha")}
+                  >
+                    <span>Por Fecha{(fechaDesde || fechaHasta) && " ✓"}</span>
                     <span>▸</span>
                   </div>
 
-                  {/* ================================
-                      GÉNERO
-                     ================================= */}
-
+                  {/* Filtro por género */}
                   <div
-                    className={`dropdown-item ${
-                      submenúAbierto === "genero" ? "seleccionado" : ""
-                    }`}
-                    onClick={() =>
-                      setSubmenúAbierto(
-                        submenúAbierto === "genero" ? null : "genero",
-                      )
-                    }>
-                    <span>
-                      Por Género
-                      {filtroGenero && ` (${filtroGenero})`}
-                    </span>
-
+                    className={`dropdown-item ${submenúAbierto === "genero" ? "seleccionado" : ""}`}
+                    onClick={() => setSubmenúAbierto(submenúAbierto === "genero" ? null : "genero")}
+                  >
+                    <span>Por Género{filtroGenero && ` (${filtroGenero})`}</span>
                     <span>▸</span>
                   </div>
 
-                  {/* ================================
-                      CURSO
-                     ================================= */}
-
+                  {/* Filtro por curso */}
                   <div
-                    className={`dropdown-item ${
-                      submenúAbierto === "curso" ? "seleccionado" : ""
-                    }`}
-                    onClick={() =>
-                      setSubmenúAbierto(
-                        submenúAbierto === "curso" ? null : "curso",
-                      )
-                    }>
-                    <span>
-                      Por Curso
-                      {filtroCurso && ` (${filtroCurso})`}
-                    </span>
-
+                    className={`dropdown-item ${submenúAbierto === "curso" ? "seleccionado" : ""}`}
+                    onClick={() => setSubmenúAbierto(submenúAbierto === "curso" ? null : "curso")}
+                  >
+                    <span>Por Curso{filtroCurso && ` (${filtroCurso})`}</span>
                     <span>▸</span>
                   </div>
 
-                  {/* ================================
-                      LIMPIAR
-                     ================================= */}
-
+                  {/* Limpiar filtros */}
                   {hayFiltrosActivos && (
-                    <button
-                      className="btn-limpiar-filtros"
-                      onClick={limpiarFiltros}>
+                    <button className="btn-limpiar-filtros" onClick={limpiarFiltros}>
                       Limpiar Filtros
                     </button>
                   )}
                 </div>
 
-                {/* ==================================================
-                    SUBMENÚ FECHA
-                   ================================================== */}
-
+                {/* Submenú de fecha */}
                 {submenúAbierto === "fecha" && (
                   <div className="dropdown-submenu dropdown-submenu-fecha">
                     <div className="submenu-header">Rango de Fechas</div>
-
                     <div className="filtro-fecha-container">
                       <label>Desde:</label>
-
                       <input
                         type="date"
                         value={fechaDesde}
@@ -496,10 +450,8 @@ const SesionesVisor = () => {
                         className="input-fecha"
                       />
                     </div>
-
                     <div className="filtro-fecha-container">
                       <label>Hasta:</label>
-
                       <input
                         type="date"
                         value={fechaHasta}
@@ -510,58 +462,41 @@ const SesionesVisor = () => {
                   </div>
                 )}
 
-                {/* ==================================================
-                    SUBMENÚ GÉNERO
-                   ================================================== */}
-
+                {/* Submenú de género */}
                 {submenúAbierto === "genero" && (
                   <div className="dropdown-submenu">
                     <div className="submenu-header">Seleccionar Género</div>
-
                     {opcionesGenero.map((genero) => (
                       <div
                         key={genero}
                         className={`submenu-item ${
-                          filtroGenero === genero ? "activo" : ""
+                          normalizarGenero(filtroGenero) === normalizarGenero(genero) ? "activo" : ""
                         }`}
-                        onClick={() => {
-                          setFiltroGenero(
-                            filtroGenero === genero ? "" : genero,
-                          );
-                        }}>
+                        onClick={() =>
+                          setFiltroGenero(filtroGenero === genero ? "" : genero)
+                        }
+                      >
                         {genero}
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* ==================================================
-                    SUBMENÚ CURSO
-                   ================================================== */}
-
+                {/* Submenú de curso */}
                 {submenúAbierto === "curso" && (
                   <div className="dropdown-submenu">
                     <div className="submenu-header">Seleccionar Curso</div>
-
                     {cursosDisponibles.length === 0 ? (
-                      <div
-                        className="submenu-item"
-                        style={{
-                          color: "#999",
-                          cursor: "default",
-                        }}>
+                      <div className="submenu-item" style={{ color: "#999", cursor: "default" }}>
                         Sin cursos registrados
                       </div>
                     ) : (
                       cursosDisponibles.map((curso) => (
                         <div
                           key={curso}
-                          className={`submenu-item ${
-                            filtroCurso === curso ? "activo" : ""
-                          }`}
-                          onClick={() => {
-                            setFiltroCurso(filtroCurso === curso ? "" : curso);
-                          }}>
+                          className={`submenu-item ${filtroCurso === curso ? "activo" : ""}`}
+                          onClick={() => setFiltroCurso(filtroCurso === curso ? "" : curso)}
+                        >
                           {curso}
                         </div>
                       ))
@@ -574,25 +509,16 @@ const SesionesVisor = () => {
         </div>
       </header>
 
-      {/* ======================================================
-          MODAL BÚSQUEDA POR ID
-         ====================================================== */}
-
+      {/* MODAL DE BÚSQUEDA */}
       {modalBusquedaAbierta && (
-        <div
-          className="modal-overlay"
-          onClick={() => setModalBusquedaAbierta(false)}>
+        <div className="modal-overlay" onClick={() => setModalBusquedaAbierta(false)}>
           <div className="modal-contenido" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Buscar Sesión por ID</h3>
-
-              <button
-                className="btn-cerrar-modal"
-                onClick={() => setModalBusquedaAbierta(false)}>
+              <button className="btn-cerrar-modal" onClick={() => setModalBusquedaAbierta(false)}>
                 ✕
               </button>
             </div>
-
             <div className="modal-body">
               <input
                 type="text"
@@ -602,11 +528,8 @@ const SesionesVisor = () => {
                 className="input-busqueda-id"
                 autoFocus
               />
-
               {busquedaId && (
-                <button
-                  className="btn-limpiar-busqueda"
-                  onClick={() => setBusquedaId("")}>
+                <button className="btn-limpiar-busqueda" onClick={() => setBusquedaId("")}>
                   Borrar búsqueda
                 </button>
               )}
@@ -615,37 +538,19 @@ const SesionesVisor = () => {
         </div>
       )}
 
-      {/* ======================================================
-          LISTADO DE SESIONES
-         ====================================================== */}
-
+      {/* LISTADO DE SESIONES */}
       <section className="sesiones-container">
         <div className="sesiones-list">
           {cargando ? (
-            <p
-              style={{
-                textAlign: "center",
-                padding: "20px",
-                color: "#64748B",
-              }}>
+            <p style={{ textAlign: "center", padding: "20px", color: "#64748B" }}>
               Cargando sesiones...
             </p>
           ) : error ? (
-            <p
-              style={{
-                textAlign: "center",
-                padding: "20px",
-                color: "#EF4444",
-              }}>
+            <p style={{ textAlign: "center", padding: "20px", color: "#EF4444" }}>
               {error}
             </p>
           ) : sesionesPaginadas.length === 0 ? (
-            <p
-              style={{
-                textAlign: "center",
-                padding: "20px",
-                color: "#64748B",
-              }}>
+            <p style={{ textAlign: "center", padding: "20px", color: "#64748B" }}>
               No hay sesiones registradas que coincidan con la búsqueda.
             </p>
           ) : (
@@ -654,46 +559,35 @@ const SesionesVisor = () => {
                 key={sesion.id}
                 className="sesion-card"
                 onClick={() => navigate(`/teacher/sesiones/${sesion.id}`)}
-                style={{
-                  cursor: "pointer",
-                }}>
+                style={{ cursor: "pointer" }}
+              >
                 <span className="sesion-col sesion-col-id">{sesion.id}</span>
-
                 <span className="sesion-col">{sesion.fechaFormateada}</span>
-
                 <span className="sesion-col">{sesion.curso}</span>
-
-                <span className="sesion-col sesion-col-genero">
-                  {sesion.genero || "—"}
-                </span>
+                <span className="sesion-col sesion-col-genero">{sesion.genero || "—"}</span>
               </div>
             ))
           )}
         </div>
 
-        {/* ====================================================
-            PAGINACIÓN
-           ==================================================== */}
-
+        {/* PAGINACIÓN */}
         {!cargando && totalPaginas > 1 && (
           <div className="paginacion-container">
             <button
               className="btn-paginacion"
               onClick={() => setPaginaActual((p) => Math.max(p - 1, 1))}
-              disabled={paginaActual === 1}>
+              disabled={paginaActual === 1}
+            >
               Anterior
             </button>
-
             <span className="info-paginacion">
               Página {paginaActual} de {totalPaginas}
             </span>
-
             <button
               className="btn-paginacion"
-              onClick={() =>
-                setPaginaActual((p) => Math.min(p + 1, totalPaginas))
-              }
-              disabled={paginaActual === totalPaginas}>
+              onClick={() => setPaginaActual((p) => Math.min(p + 1, totalPaginas))}
+              disabled={paginaActual === totalPaginas}
+            >
               Siguiente
             </button>
           </div>

@@ -193,7 +193,34 @@ function startBackend() {
   }
 }
 
-function createWindow() {
+const BACKEND_HEALTH_URL = "http://127.0.0.1:5000/health";
+
+async function waitForBackendReady(maxMs = 45000) {
+  const start = Date.now();
+  const intervalMs = 500;
+  while (Date.now() - start < maxMs) {
+    try {
+      const resp = await fetch(BACKEND_HEALTH_URL, {
+        method: "GET",
+        timeout: 300,
+      });
+      if (resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        if (data && data.status === "ok") {
+          console.log("✅ Backend Flask listo (/health = ok)");
+          return true;
+        }
+      }
+    } catch (e) {
+      // Aún no está listo — esperamos y reintentamos
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  console.error("⏱️ Timeout esperando backend Flask (>" + maxMs + "ms)");
+  return false;
+}
+
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -201,7 +228,7 @@ function createWindow() {
     minHeight: 700,
     title: "EmotionLab",
     autoHideMenuBar: true,
-
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       nodeIntegration: false,
@@ -238,15 +265,26 @@ function createWindow() {
 
   console.log("📄 Frontend path:", frontendPath);
 
+  // Mostramos splash de "cargando" mientras el backend arranca
+  mainWindow.loadURL("about:blank");
+  mainWindow.webContents.executeJavaScript(
+    `document.body.innerHTML = '<div style="font-family:Arial;padding:60px 40px;text-align:center;color:#17315E;background:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;"><div><h2 style="margin:0 0 12px 0;">EmotionLab</h2><p style="color:#475569;margin:0;">Iniciando servicios… por favor espera unos segundos.</p></div></div>';`
+  );
+  mainWindow.show();
+
   if (!fs.existsSync(frontendPath)) {
     console.error("❌ No se encontró index.html en:", frontendPath);
     console.error("   Asegúrate de ejecutar: npm run build");
-    mainWindow.loadURL("about:blank");
     mainWindow.webContents.executeJavaScript(
       `document.body.innerHTML = '<div style="font-family:Arial;padding:40px;color:#b91c1c;"><h2>Error al cargar EmotionLab</h2><p>No se encontraron los archivos del frontend.</p><p style="color:#6b7280;">Asegúrate de ejecutar <code>npm run build</code> antes de iniciar Electron.</p></div>';`
     );
     return;
   }
+
+  // Esperamos a que Flask responda antes de abrir el frontend, para evitar
+  // "Failed to fetch" en el login inicial.
+  console.log("⏳ Esperando backend Flask...");
+  await waitForBackendReady(45000);
 
   mainWindow.loadFile(frontendPath).catch((err) => {
     console.error("❌ Error cargando frontend:", err.message);

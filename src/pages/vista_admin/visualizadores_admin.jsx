@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import "./visualizadores_admin.css";
@@ -8,12 +8,16 @@ export default function ListaVisualizadores() {
   const navigate = useNavigate();
   const [visualizadores, setVisualizadores] = useState([]);
   const [busqueda, setBusqueda] = useState("");
+  const [guardando, setGuardando] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
   const [datosEdicion, setDatosEdicion] = useState({
     nombre: "",
     email: "",
     rol: "",
   });
+
+  const mountedRef = useRef(false);
+  const fetchingRef = useRef(false);
 
   // Función formateadora para transformar "admin" -> "Administrador" y "teacher" -> "Visualizador"
   const obtenerNombreRol = (rol) => {
@@ -25,12 +29,11 @@ export default function ListaVisualizadores() {
     return rol;
   };
 
-  useEffect(() => {
-    obtenerVisualizadores();
-  }, []);
-
-  const obtenerVisualizadores = async () => {
+  const obtenerVisualizadores = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
     try {
+      if (!mountedRef.current) return;
       const token = localStorage.getItem("token");
       const respuesta = await fetch(getApiUrl("/users"), {
         method: "GET",
@@ -41,11 +44,25 @@ export default function ListaVisualizadores() {
       });
       if (!respuesta.ok) throw new Error(`Error: ${respuesta.status}`);
       const dataReales = await respuesta.json();
-      setVisualizadores(dataReales);
+      if (mountedRef.current) {
+        setVisualizadores(dataReales);
+      }
     } catch (error) {
-      console.error("Error con el backend:", error);
+      if (mountedRef.current) {
+        console.error("Error con el backend:", error);
+      }
+    } finally {
+      fetchingRef.current = false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    obtenerVisualizadores();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [obtenerVisualizadores]);
 
   const visualizadoresFiltrados = visualizadores.filter((visor) => {
     const textoBuscado = busqueda.toLowerCase();
@@ -69,6 +86,11 @@ export default function ListaVisualizadores() {
   };
 
   const guardarEdicion = async (uid) => {
+    if (guardando) return
+    
+    setGuardando(true); // Bloqueamos todo
+    const toastId = toast.loading("Guardando cambios...", { id: "editar-usuario" });
+
     try {
       const token = localStorage.getItem("token");
       const respuesta = await fetch(getApiUrl(`/users/${uid}`), {
@@ -89,12 +111,12 @@ export default function ListaVisualizadores() {
       );
 
       setEditandoId(null);
-      toast.success("Usuario actualizado correctamente", { duration: 5000 });
+      toast.success("Usuario actualizado correctamente", { id: toastId, duration: 5000 });
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Hubo un problema al guardar los cambios", {
-        duration: 5000,
-      });
+      toast.error("Hubo un problema al guardar los cambios", { id: toastId, duration: 5000 });
+    } finally {
+      setGuardando(false); // Liberamos el botón al terminar
     }
   };
 
@@ -162,7 +184,7 @@ export default function ListaVisualizadores() {
           </div>
         </div>
       ),
-      { duration: 6000 },
+      { duration: 5000, id: "alerta-confirmacion" },
     );
   };
 
@@ -226,7 +248,7 @@ export default function ListaVisualizadores() {
           </div>
         </div>
       ),
-      { duration: 6000 },
+      { duration: 5000, id: "alerta-confirmacion" },
     );
   };
 
@@ -286,9 +308,20 @@ export default function ListaVisualizadores() {
           </div>
         </div>
       ),
-      { duration: 6000 },
+      { duration: 5000, id: "alerta-confirmacion" },
     );
   };
+
+  let miUid = null;
+  try {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      miUid = payload.sub || payload.identity || payload.uid;
+    }
+  } catch {
+    // Token mal formado o no base64 válido → miUid queda null.
+  }
 
   return (
     <div className="contenedor-tabla-admin">
@@ -352,6 +385,8 @@ export default function ListaVisualizadores() {
                           value={datosEdicion.rol}
                           onChange={handleChangeEdicion}
                           className="input-buscador"
+                          disabled={visor.uid === miUid}
+                          title={visor.uid === miUid ? "No puedes cambiar tu propio rol" : ""}
                           style={{ padding: "6px 10px" }}>
                           <option value="teacher">Visualizador</option>
                           <option value="admin">Administrador</option>
@@ -401,27 +436,28 @@ export default function ListaVisualizadores() {
                           ✏️
                         </button>
 
-                        {/* Mostrar botón de activar/desactivar según el estado */}
-                        {visor.activo ? (
-                          <button
-                            className="btn-accion btn-desactivar"
-                            onClick={() => handleDesactivar(visor.uid)}
-                            title="Desactivar">
-                            🚫
-                          </button>
+                      {visor.activo ? (
+                        <button
+                          className="btn-accion btn-desactivar"
+                          onClick={() => handleDesactivar(visor.uid)}
+                          disabled={visor.uid === miUid}
+                          title={visor.uid === miUid ? "No puedes desactivar tu propia cuenta" : "Desactivar"}>
+                          🚫
+                        </button>
                         ) : (
-                          <button
-                            className="btn-accion btn-activar"
-                            onClick={() => handleActivar(visor.uid)}
-                            title="Activar">
-                            ✅
-                          </button>
+                        <button
+                          className="btn-accion btn-activar"
+                          onClick={() => handleActivar(visor.uid)}
+                          disabled={visor.uid === miUid}
+                          title={visor.uid === miUid ? "No puedes activar tu propia cuenta" : "Activar"}>
+                          ✅
+                        </button>
                         )}
-
                         <button
                           className="btn-accion btn-eliminar"
                           onClick={() => handleEliminar(visor.uid)}
-                          title="Eliminar">
+                          disabled={visor.uid === miUid} 
+                          title={visor.uid === miUid ? "No puedes eliminar tu propia cuenta" : "Eliminar"}>
                           🗑️
                         </button>
                       </td>

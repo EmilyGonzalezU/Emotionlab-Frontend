@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { getApiUrl } from "../config/api.js";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function ResetPassword() {
+  const navigate = useNavigate();
   const [token, setToken] = useState(null);
   const [claves, setClaves] = useState({
     nueva: "",
@@ -80,8 +82,7 @@ const [showPassword, setShowPassword] = useState(false);
     setCargando(true);
 
     try {
-      // Hacemos un POST a una ruta nueva que crearemos en Python
-      const respuesta = await fetch("http://localhost:5000/auth/reset-password", {
+      const respuesta = await fetch(getApiUrl("/auth/reset-password"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,13 +100,13 @@ const [showPassword, setShowPassword] = useState(false);
         
         setClaves({ nueva: "", confirmar: "" });
         setTimeout(() => {
-          window.location.href = "/login";
+          navigate.replace("/");
         }, 2000);
 
       } else {
         toast.error(data.error || "El enlace es inválido o ha expirado.", { duration: 5000 });
       }
-    } catch (error) {
+    } catch {
       toast.error("Error de conexión con el servidor.", { duration: 5000 });
     } finally {
       setCargando(false);
@@ -118,9 +119,23 @@ const [showPassword, setShowPassword] = useState(false);
         <div className="login-card" style={{ textAlign: "center" }}>
           <h2>Enlace Inválido</h2>
           <p>No se encontró el código de seguridad. Por favor, solicita un nuevo enlace de recuperación.</p>
-          <a href="/forgot-password" style={{ color: "#007bff", textDecoration: "none", marginTop: "15px", display: "inline-block" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/recuperar-contrasena")}
+            style={{
+              color: "#007bff",
+              textDecoration: "none",
+              marginTop: "15px",
+              display: "inline-block",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "1rem",
+              padding: 0,
+            }}
+          >
             Volver
-          </a>
+          </button>
         </div>
       </div>
     );
