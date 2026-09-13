@@ -399,3 +399,79 @@
   color: #b91c1c;
   background: #fee2e2;
 }
+
+/* =========================================
+   MODAL PERSONALIZADO EMOTIONLAB
+   ========================================= */
+.modal-solicitud-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(3px); /* Un difuminado un pelín más notorio */
+}
+
+.modal-solicitud-box {
+  background-color: #ffffff;
+  padding: 40px 32px; /* Más espacio interior para que respire */
+  border-radius: 16px; /* Bordes mucho más redonditos */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.05); /* Sombra más suave y moderna */
+  width: 90%;
+  max-width: 450px; /* Cajita un poquitín más ancha (antes era 380px) */
+  text-align: center;
+  border-top: 8px solid #17315E; /* Borde superior un poco más grueso para mantener el peso visual */
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.modal-solicitud-icon {
+  font-size: 44px; /* Icono un poco más grande proporcional al nuevo ancho */
+  margin-bottom: 16px;
+}
+
+.modal-solicitud-title {
+  color: #17315E;
+  margin: 0 0 12px 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.modal-solicitud-text {
+  color: #4b5563;
+  font-size: 16px;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.btn-modal-entendido {
+  background-color: #17315E;
+  color: white;
+  border: none;
+  border-radius: 8px; /* Botón también un poco más redondeado */
+  padding: 12px 36px; /* Botón ligeramente más robusto */
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-modal-entendido:hover {
+  background-color: #0f2244;
+  transform: translateY(-2px); /* Pequeño efecto al pasar el mouse */
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

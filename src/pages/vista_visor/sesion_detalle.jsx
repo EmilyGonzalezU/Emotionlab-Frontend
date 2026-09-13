@@ -24,6 +24,15 @@ const SesionDetalle = () => {
   const [cargandoNombreAlumno, setCargandoNombreAlumno] = useState(false);
 
   // =========================================================
+  // ESTADOS REALES DE SOLICITUD (null, 'PENDING', 'APPROVED', 'REJECTED')
+  // =========================================================
+  const [estadoPdf, setEstadoPdf] = useState(null);
+  const [estadoExcel, setEstadoExcel] = useState(null);
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [mensajeModal, setMensajeModal] = useState("");
+
+  // =========================================================
   // OBTENER DATOS DE LA SESIÓN DESDE EL BACKEND
   // =========================================================
   const obtenerDetalleSesion = useCallback(async () => {
@@ -184,6 +193,57 @@ const SesionDetalle = () => {
   const finSesion = sessionData?.fechaFin || "En curso / Sin registro";
 
   // =========================================================
+  // VERIFICAR ESTADO DE SOLICITUD AL CARGAR LA SESIÓN (API REAL)
+  // =========================================================
+  useEffect(() => {
+    if (!idSesion) return;
+
+    const revisarSolicitudesPrevias = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const respuesta = await fetch(getApiUrl("/report-requests?mine=true"), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (respuesta.ok) {
+          const data = await respuesta.json();
+          const misSolicitudes = data.items || [];
+          
+          // Filtramos las solicitudes que correspondan a esta sesión asegurando que el ID coincida como texto
+          const deEstaSesion = misSolicitudes.filter(sol => String(sol.session_id) === String(idSesion));
+
+          // Función robusta para encontrar el estado real (Aprobado > Pendiente > Rechazado)
+          const obtenerMejorEstado = (tipo) => {
+            const reqs = deEstaSesion.filter(s => (s.motivo || "").toUpperCase() === tipo);
+            if (reqs.length === 0) return null;
+            
+            // 1. Si hay alguna aprobada, esa es la que importa (puede descargar)
+            const aprobada = reqs.find(r => r.status === 'APPROVED' || r.status === 'COMPLETED');
+            if (aprobada) return aprobada.status;
+            
+            // 2. Si no hay aprobadas, pero hay una pendiente, debe esperar
+            const pendiente = reqs.find(r => r.status === 'PENDING');
+            if (pendiente) return pendiente.status;
+            
+            // 3. Si todas fueron rechazadas, devolvemos REJECTED para permitirle volver a pedir
+            return 'REJECTED'; 
+          };
+
+          setEstadoPdf(obtenerMejorEstado("PDF"));
+          setEstadoExcel(obtenerMejorEstado("EXCEL"));
+        }
+      } catch (error) {
+        console.error("Error al consultar el estado de las solicitudes:", error);
+      }
+    };
+
+    revisarSolicitudesPrevias();
+  }, [idSesion]);
+
+  // =========================================================
   // LÓGICA DE EDICIÓN DEL NOMBRE DEL ALUMNO
   // =========================================================
   const handleAbrirEdicionNombre = () => {
@@ -272,9 +332,70 @@ const SesionDetalle = () => {
   };
 
   // =========================================================
-  // EXPORTAR A PDF (CON AVISO IA)
+  // CONTROLADOR CENTRAL DE CLICS (Descarga o Solicitud)
   // =========================================================
-  const handleExportPDF = () => {
+  const handleClickDescarga = async (e, tipo) => {
+    e.preventDefault();
+    if (enviandoSolicitud) return;
+    
+    const estadoActual = tipo === 'pdf' ? estadoPdf : estadoExcel;
+    const estadoLimpio = estadoActual ? String(estadoActual).toUpperCase() : null;
+
+    // Si está APROBADA, se descarga inmediatamente sin consultar al admin
+    if (estadoLimpio === 'APPROVED' || estadoLimpio === 'COMPLETED') {
+      if (tipo === 'pdf') generarPDF();
+      if (tipo === 'excel') generarExcel();
+      return;
+    }
+
+    // Si está PENDIENTE, se avisa y se bloquea el re-envío
+    if (estadoLimpio === 'PENDING') {
+      setMensajeModal(`Tu solicitud de ${tipo.toUpperCase()} sigue pendiente de aprobación por el Administrador.`);
+      setMostrarModal(true);
+      return;
+    }
+
+    // Si el estado es null (nueva) o REJECTED (rechazada), permite enviarla al backend
+    setEnviandoSolicitud(true);
+    try {
+      const token = localStorage.getItem("token");
+      const respuesta = await fetch(getApiUrl("/report-requests"), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          session_id: idSesion,
+          motivo: tipo.toUpperCase()
+        })
+      });
+
+      if (!respuesta.ok) throw new Error("No se pudo crear la solicitud.");
+
+      // Actualizamos el estado visual localmente al instante para que vea "PENDING"
+      if (tipo === 'pdf') setEstadoPdf('PENDING');
+      if (tipo === 'excel') setEstadoExcel('PENDING');
+      
+      setMensajeModal(`Solicitud de ${tipo.toUpperCase()} enviada al administrador exitosamente.`);
+      setMostrarModal(true);
+    } catch (error) {
+      console.error("Error al enviar solicitud:", error);
+      setMensajeModal("Hubo un error al comunicarse con el servidor.");
+      setMostrarModal(true);
+    } finally {
+      setEnviandoSolicitud(false);
+    }
+  };
+
+  const cerrarModal = () => {
+    setMostrarModal(false);
+  };
+
+  // =========================================================
+  // EXPORTAR A PDF (Generación Local)
+  // =========================================================
+  const generarPDF = () => {
     try {
       if (!sesionData) return;
       const doc = new jsPDF();
@@ -381,9 +502,9 @@ const SesionDetalle = () => {
   };
 
   // =========================================================
-  // EXPORTAR A EXCEL (CON AVISO IA)
+  // EXPORTAR A EXCEL (Generación Local)
   // =========================================================
-  const handleExportExcel = () => {
+  const generarExcel = () => {
     try {
       if (!sesionData) return;
 
@@ -467,16 +588,26 @@ const SesionDetalle = () => {
           <div className="acciones-exportar">
             <button
               className="btn-exportar-icono"
-              onClick={handleExportPDF}
-              title="Exportar a PDF"
+              onClick={(e) => handleClickDescarga(e, 'pdf')}
+              disabled={enviandoSolicitud}
+              title={
+                estadoPdf === 'APPROVED' ? "Descargar PDF" : 
+                estadoPdf === 'PENDING' ? "Solicitud Pendiente" : 
+                "Solicitar PDF"
+              }
               aria-label="Exportar a PDF">
               <span className="icono-pdf">PDF</span>
             </button>
 
             <button
               className="btn-exportar-icono"
-              onClick={handleExportExcel}
-              title="Exportar a Excel"
+              onClick={(e) => handleClickDescarga(e, 'excel')}
+              disabled={enviandoSolicitud}
+              title={
+                estadoExcel === 'APPROVED' ? "Descargar Excel" : 
+                estadoExcel === 'PENDING' ? "Solicitud Pendiente" : 
+                "Solicitar Excel"
+              }
               aria-label="Exportar a Excel">
               <span className="icono-excel">XLS</span>
             </button>
@@ -690,6 +821,22 @@ const SesionDetalle = () => {
                 <p className="sin-datos">No hay eventos registrados.</p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PERSONALIZADO EMOTIONLAB */}
+      {mostrarModal && (
+        <div className="modal-solicitud-overlay">
+          <div className="modal-solicitud-box">
+            <div className="modal-solicitud-icon">
+              {mensajeModal.includes("pendiente") ? "⏳" : "✅"}
+            </div>
+            <h3 className="modal-solicitud-title">Aviso</h3>
+            <p className="modal-solicitud-text">{mensajeModal}</p>
+            <button className="btn-modal-entendido" onClick={cerrarModal}>
+              Entendido
+            </button>
           </div>
         </div>
       )}

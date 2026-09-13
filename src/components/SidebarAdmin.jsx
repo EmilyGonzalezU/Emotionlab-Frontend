@@ -57,6 +57,18 @@ export default function SidebarAdmin() {
                 Inicio
               </NavLink>
             </li>
+            
+            {/* NUEVO BOTÓN PARA SOLICITUDES */}
+            <li>
+              <NavLink
+                to="/admin/solicitudes"
+                className={({ isActive }) =>
+                  `sidebar-link ${isActive ? "active" : ""}`
+                }>
+                Solicitudes
+              </NavLink>
+            </li>
+
             <li>
               <NavLink
                 to="/admin/cuenta"
