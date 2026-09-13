@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getApiUrl } from "../../config/api.js";
 import toast from "react-hot-toast";
-// IMPORTAMOS EL CSS DE LAS SESIONES QUE TE GUSTA
 import "../vista_visor/sesiones_visor.css"; 
 
 export default function AuditLogs() {
@@ -12,7 +11,7 @@ export default function AuditLogs() {
   // Filtros de las pestañas
   const [pestañaLogs, setPestañaLogs] = useState("LOGIN");
 
-  // Paginación (igual que en sesiones)
+  // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const sesionesPorPagina = 8;
 
@@ -33,7 +32,16 @@ export default function AuditLogs() {
       }
       
       const data = await respuesta.json();
-      setLogsAudit(data.items || []);
+      
+      console.log("Datos de auditoría recibidos:", data);
+
+      // 🛡️ AQUÍ ESTABA EL ERROR: Faltaba el if
+      if (Array.isArray(data)) {
+        setLogsAudit(data);
+      } else {
+        setLogsAudit(data.items || []);
+      }
+      
     } catch (error) {
       console.error("Error al cargar logs:", error);
       setError("No se pudieron cargar los registros de auditoría.");
@@ -47,31 +55,26 @@ export default function AuditLogs() {
     cargarLogs();
   }, []);
 
-  // Filtrado de pestañas
   const logsFiltrados = logsAudit.filter(log => {
     const act = log.action.toUpperCase();
-    if (pestañaLogs === "LOGIN") return act.includes("LOGIN");
+    if (pestañaLogs === "LOGIN") return act.includes("LOGIN") || act.includes("PASSWORD");
     if (pestañaLogs === "REPORT") return act.includes("REPORT");
     if (pestañaLogs === "USER") return act.includes("USER") || act.includes("USUARIO") || act.includes("CUENTA");
     return false;
   });
 
-  // Reiniciar paginación al cambiar de pestaña
   useEffect(() => {
     setPaginaActual(1);
   }, [pestañaLogs]);
 
-  // Lógica de Paginación
   const totalPaginas = Math.ceil(logsFiltrados.length / sesionesPorPagina) || 1;
   const indiceUltimaSesion = paginaActual * sesionesPorPagina;
   const indicePrimeraSesion = indiceUltimaSesion - sesionesPorPagina;
   const logsPaginados = logsFiltrados.slice(indicePrimeraSesion, indiceUltimaSesion);
 
   return (
-    // USAMOS LA MISMA CLASE PRINCIPAL
     <div className="sesiones-main-content">
       
-      {/* HEADER IDÉNTICO AL DE SESIONES */}
       <header className="sesiones-header">
         <div>
           <h2>Registro de Auditoría</h2>
@@ -81,7 +84,6 @@ export default function AuditLogs() {
         </div>
 
         <div className="acciones-header">
-          {/* Reutilizamos el estilo del menú de filtros para nuestras pestañas */}
           <div className="filtros-wrapper">
             <div style={{ display: "flex", gap: "8px", border: "1px solid #cbd5e1", padding: "4px", borderRadius: "8px", backgroundColor: "#fff" }}>
               <button 
@@ -119,10 +121,8 @@ export default function AuditLogs() {
         </div>
       </header>
 
-      {/* CONTENEDOR DE TARJETAS IDÉNTICO A SESIONES */}
       <section className="sesiones-container">
         
-        {/* Cabecera de la tabla improvisada con Flexbox para alinear con las cards */}
         <div style={{ 
           display: "grid", gridTemplateColumns: "1.2fr 1.5fr 1.5fr", 
           padding: "0 24px 12px 24px", 
@@ -158,7 +158,6 @@ export default function AuditLogs() {
                   }) 
                 : "Fecha desconocida";
 
-              // Traductor amigable
               let accionFmt = log.action;
               const actUpper = log.action.toUpperCase();
               
@@ -172,8 +171,31 @@ export default function AuditLogs() {
               else if (actUpper.includes("DESHABILITA") || actUpper.includes("DISABLE")) accionFmt = "🚫 Desactivó Usuario";
               else if (actUpper.includes("HABILITA") || actUpper.includes("ENABLE")) accionFmt = "✅ Habilitó Usuario";
 
+              let textoSecundario = "";
+              if (pestañaLogs === "REPORT") {
+                const idReal = log.session_id || log.participant_id || log.extra?.session_id || log.extra?.report_id;
+                if (!idReal || String(idReal) === "undefined") {
+                  textoSecundario = "Sesión ID: No disponible";
+                } else if (String(idReal) === "__PENDING__") {
+                  textoSecundario = "Sesión ID: En proceso...";
+                } else {
+                  textoSecundario = `Sesión ID: ${idReal}`;
+                }
+              } else {
+                textoSecundario = log.extra?.target_email ? `Especialista: ${log.extra.target_email}` : "";
+              }
+
               return (
-                <div key={index} className="sesion-card" style={{ gridTemplateColumns: "1.2fr 1.5fr 1.5fr", cursor: "default" }}>
+                <div 
+                  key={index} 
+                  className="sesion-card" 
+                  style={{ 
+                    gridTemplateColumns: "1.2fr 1.5fr 1.5fr", 
+                    cursor: "default",
+                    backgroundColor: actUpper === "LOGIN_FAILED" ? "#fef2f2" : undefined,
+                    borderLeft: actUpper === "LOGIN_FAILED" ? "4px solid #ef4444" : undefined
+                  }}
+                >
                   <span className="sesion-col sesion-col-id" style={{ fontSize: "0.85rem" }}>
                     {fechaLegible}
                   </span>
@@ -185,13 +207,18 @@ export default function AuditLogs() {
                   <span className="sesion-col">
                     {pestañaLogs === "LOGIN" ? (
                       <div style={{ display: "flex", flexDirection: "column" }}>
+                        {/* 🎨 AQUÍ ESTÁ EL DISEÑO ACTUALIZADO CON LOS NUEVOS ÍCONOS */}
                         <span style={{ 
-                          color: actUpper === "LOGIN_OK" ? "#166534" : "#991b1b", 
+                          color: actUpper === "LOGIN_OK" ? "#166534" : (actUpper.includes("PASSWORD") ? "#0284c7" : "#991b1b"), 
                           fontWeight: "600", fontSize: "0.9rem" 
                         }}>
-                          {actUpper === "LOGIN_OK" ? "✅ Ingreso Exitoso" : "❌ Ingreso Fallido"}
+                          {actUpper === "LOGIN_OK" ? "✅ Ingreso Exitoso" : 
+                           actUpper === "PASSWORD_RESET" ? "🔑 Recuperación solicitada" :
+                           actUpper === "PASSWORD_CHANGED" ? "🔄 Contraseña Actualizada" :
+                           actUpper === "NEW_PASSWORD_REQUIRED" ? "⚠️ Clave Temporal Usada" :
+                           "❌ Ingreso Fallido"}
                         </span>
-                        {actUpper !== "LOGIN_OK" && log.extra?.reason && (
+                        {actUpper.includes("LOGIN_FAILED") && log.extra?.reason && (
                           <span style={{ fontSize: "0.75rem", color: "#991b1b", marginTop: "2px" }}>
                             {log.extra.reason}
                           </span>
@@ -203,9 +230,7 @@ export default function AuditLogs() {
                           {accionFmt}
                         </span>
                         <span className="sesion-col-genero" style={{ fontSize: "0.75rem", marginTop: "2px" }}>
-                          {log.participant_id 
-                            ? `Alumno #${log.participant_id}` 
-                            : (log.extra?.target_email ? `Afectado: ${log.extra.target_email}` : "")}
+                          {textoSecundario}
                         </span>
                       </div>
                     )}
@@ -216,8 +241,8 @@ export default function AuditLogs() {
           )}
         </div>
 
-        {/* PAGINACIÓN IDÉNTICA */}
-        {!cargandoLogs && totalPaginas > 1 && (
+        {/* PAGINACIÓN VISIBLE SIEMPRE */}
+        {!cargandoLogs && (
           <div className="paginacion-container">
             <button
               className="btn-paginacion"

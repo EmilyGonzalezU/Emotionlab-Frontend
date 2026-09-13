@@ -4,7 +4,7 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import Alertas from "./components/alertas.jsx";
 import RutaProtegida from "./components/rutaProtegida.jsx";
 import ForgotPassword from './components/forgotPassword.jsx';
-import ResetPassword from './pages/ResetPassword.jsx';
+import ResetPassword from './pages/resetPassword.jsx';
 
 // ADMIN
 import Login from "./pages/login.jsx";

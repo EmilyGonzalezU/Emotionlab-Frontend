@@ -31,6 +31,17 @@ export default function CuentaVisor() {
     confirmar: "",
   });
 
+  // 👁️ Estado para mostrar/ocultar contraseñas (el ojito mágico)
+  const [mostrar, setMostrar] = useState({
+    actual: false,
+    nueva: false,
+    confirmar: false,
+  });
+
+  const toggleMostrar = (campo) => {
+    setMostrar((prev) => ({ ...prev, [campo]: !prev[campo] }));
+  };
+
   const obtenerMisDatos = useCallback(async () => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
@@ -68,13 +79,21 @@ export default function CuentaVisor() {
     const { name, value } = e.target;
     setClaves((prev) => ({ ...prev, [name]: value }));
 
-    // Validaciones en tiempo real
+    // Validaciones estricta en tiempo real
     if (name === "nueva") {
-      if (value.length > 0 && value.length < 8) {
-        setErrores((prev) => ({
-          ...prev,
-          nueva: "La contraseña debe tener al menos 8 caracteres",
-        }));
+      if (value.length > 0) {
+        const tieneMayuscula = /[A-Z]/.test(value);
+        const tieneEspecial = /[^A-Za-z0-9]/.test(value);
+        const tieneLongitud = value.length >= 8;
+
+        if (!tieneLongitud || !tieneMayuscula || !tieneEspecial) {
+          setErrores((prev) => ({
+            ...prev,
+            nueva: "Falta cumplir con los requisitos de seguridad",
+          }));
+        } else {
+          setErrores((prev) => ({ ...prev, nueva: "" }));
+        }
       } else {
         setErrores((prev) => ({ ...prev, nueva: "" }));
       }
@@ -110,9 +129,13 @@ export default function CuentaVisor() {
       return false;
     }
 
-    // Validar longitud mínima
-    if (claves.nueva.length < 8) {
-      toast.error("La nueva contraseña debe tener al menos 8 caracteres.", {
+    // Validar requisitos de seguridad (Cognito rules)
+    const tieneMayuscula = /[A-Z]/.test(claves.nueva);
+    const tieneEspecial = /[^A-Za-z0-9]/.test(claves.nueva);
+    const tieneLongitud = claves.nueva.length >= 8;
+
+    if (!tieneLongitud || !tieneMayuscula || !tieneEspecial) {
+      toast.error("La contraseña debe tener al menos 8 caracteres, 1 mayúscula y 1 carácter especial.", {
         duration: 3000,
       });
       return false;
@@ -264,59 +287,108 @@ export default function CuentaVisor() {
             </p>
 
             <form onSubmit={cambiarContrasena} className="form-cuenta">
+              {/* CONTRASEÑA ACTUAL */}
               <div className="form-grupo">
                 <label className="form-label">Contraseña Actual</label>
-                <input
-                  type="password"
-                  name="actual"
-                  value={claves.actual}
-                  onChange={manejarCambio}
-                  placeholder="Ingresa tu contraseña actual"
-                  className="form-input"
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={mostrar.actual ? "text" : "password"}
+                    name="actual"
+                    value={claves.actual}
+                    onChange={manejarCambio}
+                    placeholder="Ingresa tu contraseña actual"
+                    className="form-input"
+                    style={{ paddingRight: "40px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleMostrar("actual")}
+                    style={{
+                      position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", color: "#64748B", display: "flex",
+                    }}
+                  >
+                    {mostrar.actual ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
+              {/* NUEVA CONTRASEÑA */}
               <div className="form-grupo">
                 <label className="form-label">Nueva Contraseña</label>
-                <input
-                  type="password"
-                  name="nueva"
-                  value={claves.nueva}
-                  onChange={manejarCambio}
-                  placeholder="Crea una nueva contraseña (mínimo 8 caracteres)"
-                  className={`form-input ${errores.nueva ? "input-error" : ""}`}
-                />
+                <p style={{ fontSize: "0.8rem", color: "#64748B", marginTop: "-4px", marginBottom: "8px" }}>
+                  Debe incluir 8+ caracteres, 1 mayúscula y 1 símbolo especial.
+                </p>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={mostrar.nueva ? "text" : "password"}
+                    name="nueva"
+                    value={claves.nueva}
+                    onChange={manejarCambio}
+                    placeholder="Crea una contraseña segura"
+                    className={`form-input ${errores.nueva ? "input-error" : ""}`}
+                    style={{ paddingRight: "40px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleMostrar("nueva")}
+                    style={{
+                      position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", color: "#64748B", display: "flex",
+                    }}
+                  >
+                    {mostrar.nueva ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
                 {errores.nueva && (
                   <p
                     className="error-mensaje"
-                    style={{
-                      color: "red",
-                      fontSize: "12px",
-                      marginTop: "5px",
-                    }}>
+                    style={{ color: "red", fontSize: "12px", marginTop: "5px" }}>
                     {errores.nueva}
                   </p>
                 )}
               </div>
 
+              {/* CONFIRMAR CONTRASEÑA */}
               <div className="form-grupo">
                 <label className="form-label">Confirmar Nueva Contraseña</label>
-                <input
-                  type="password"
-                  name="confirmar"
-                  value={claves.confirmar}
-                  onChange={manejarCambio}
-                  placeholder="Repite la nueva contraseña"
-                  className={`form-input ${errores.confirmar ? "input-error" : ""}`}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={mostrar.confirmar ? "text" : "password"}
+                    name="confirmar"
+                    value={claves.confirmar}
+                    onChange={manejarCambio}
+                    placeholder="Repite la nueva contraseña"
+                    className={`form-input ${errores.confirmar ? "input-error" : ""}`}
+                    style={{ paddingRight: "40px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleMostrar("confirmar")}
+                    style={{
+                      position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", color: "#64748B", display: "flex",
+                    }}
+                  >
+                    {mostrar.confirmar ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
                 {errores.confirmar && (
                   <p
                     className="error-mensaje"
-                    style={{
-                      color: "red",
-                      fontSize: "12px",
-                      marginTop: "5px",
-                    }}>
+                    style={{ color: "red", fontSize: "12px", marginTop: "5px" }}>
                     {errores.confirmar}
                   </p>
                 )}
@@ -324,7 +396,7 @@ export default function CuentaVisor() {
 
               <button
                 type="submit"
-                disabled={cargando}
+                disabled={cargando || errores.nueva || errores.confirmar}
                 className={`btn-guardar ${cargando ? "cargando" : ""}`}>
                 {cargando ? "Guardando..." : "Cambiar Contraseña"}
               </button>

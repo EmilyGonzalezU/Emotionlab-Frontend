@@ -44,6 +44,7 @@ export default function Login() {
     }
   };
 
+  // AQUÍ ESTÁ EL ASYNC QUE SE HABÍA PERDIDO
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -75,6 +76,23 @@ export default function Login() {
 
       if (!response.ok) {
         throw new Error(data.error || "Credenciales inválidas");
+      }
+
+      if (data.challenge === "NEW_PASSWORD_REQUIRED" || data.challengeName === "NEW_PASSWORD_REQUIRED" || !data.user) {
+        toast.dismiss(toastId);
+        toast.success("¡Clave temporal correcta! Por seguridad, debes crear una nueva.");
+        
+        const userIdForSrp = data.user_id_for_srp || (data.challengeParameters && data.challengeParameters.USER_ID_FOR_SRP) || email;
+
+
+        navigate("/reset-password", { 
+          state: { 
+            email: email, 
+            session: data.session,
+            user_id_for_srp: userIdForSrp
+          } 
+        });
+        return;
       }
 
       localStorage.setItem("token", data.token);
