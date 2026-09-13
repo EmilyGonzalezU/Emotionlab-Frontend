@@ -13,7 +13,8 @@ import HomeAdmin from "./pages/vista_admin/home_admin.jsx";
 import ListaVisualizadores from "./pages/vista_admin/visualizadores_admin.jsx";
 import CrearVisualizador from "./pages/vista_admin/creacion_visor.jsx";
 import CuentaAdmin from "./pages/vista_admin/cuenta_admin.jsx";
-import SolicitudesAdmin from "./pages/vista_admin/solicitudes_admin.jsx"; // <-- NUEVA IMPORTACIÓN
+import SolicitudesAdmin from "./pages/vista_admin/solicitudes_admin.jsx";
+import AuditLogs from "./pages/vista_admin/auditLogs.jsx"; 
 
 // TEACHER
 import MenuVisor from "./pages/vista_visor/menu_visor.jsx";
@@ -49,8 +50,10 @@ function App() {
 
             <Route path="crear-visualizador" element={<CrearVisualizador />} />
             
-            {/* NUEVA RUTA DE SOLICITUDES */}
             <Route path="solicitudes" element={<SolicitudesAdmin />} />
+
+            {/* 2. NUEVA RUTA DE AUDITORÍA */}
+            <Route path="auditoria" element={<AuditLogs />} />
 
             <Route path="cuenta" element={<CuentaAdmin />} />
           </Route>

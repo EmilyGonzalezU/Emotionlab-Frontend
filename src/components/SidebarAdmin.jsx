@@ -69,6 +69,17 @@ export default function SidebarAdmin() {
               </NavLink>
             </li>
 
+            {/* NUEVO BOTÓN PARA AUDITORÍA */}
+            <li>
+              <NavLink
+                to="/admin/auditoria"
+                className={({ isActive }) =>
+                  `sidebar-link ${isActive ? "active" : ""}`
+                }>
+                Auditoría
+              </NavLink>
+            </li>
+
             <li>
               <NavLink
                 to="/admin/cuenta"
