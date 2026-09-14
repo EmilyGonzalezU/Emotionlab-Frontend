@@ -1,55 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getApiUrl } from "../config/api.js";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { validateNewPassword } from "../lib/passwordPolicy.js";
+import PasswordField from "../ui/PasswordField.jsx";
+import PasswordChecklist from "../ui/PasswordChecklist.jsx";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 🕵️‍♀️ Atrapamos los datos del Login o de la pantalla de "Olvidé mi contraseña"
+  // Atrapamos los datos del Login o de la pantalla de "Olvidé mi contraseña"
   const stateEmail = location.state?.email;
   const stateSession = location.state?.session;
   const stateUserIdForSrp = location.state?.user_id_for_srp || stateEmail;
   const modoRecuperacion = location.state?.modoRecuperacion; // <- NUEVA BANDERA
 
-  const [token, setToken] = useState(null);
   const [codigo, setCodigo] = useState(""); // <- ESTADO PARA EL CÓDIGO DE 6 DÍGITOS
   const [claves, setClaves] = useState({ nueva: "", confirmar: "" });
-  
+
   const [cargando, setCargando] = useState(false);
   const [errores, setErrores] = useState({ nueva: "", confirmar: "" });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  useEffect(() => {
-    if (!stateSession && !modoRecuperacion) {
-      try {
-        const urlParams = window.location.hash.split('?')[1];
-        if (urlParams) {
-          const queryParams = new URLSearchParams(urlParams);
-          setToken(queryParams.get("token"));
-        }
-      } catch (e) {
-        console.error("No se pudo leer la URL", e);
-      }
-    }
-  }, [stateSession, modoRecuperacion]);
 
   const manejarCambio = (e) => {
     const { name, value } = e.target;
     setClaves((prev) => ({ ...prev, [name]: value }));
 
     if (name === "nueva") {
-      const tieneMayuscula = /[A-Z]/.test(value);
-      const tieneNumero = /\d/.test(value);
-      const tieneEspecial = /[!@#$%^&*(),.?":{}|<>]/.test(value);
-
-      if (value.length > 0 && value.length < 8) {
-        setErrores((prev) => ({ ...prev, nueva: "Mínimo 8 caracteres" }));
-      } else if (value.length > 0 && (!tieneMayuscula || !tieneNumero || !tieneEspecial)) {
-        setErrores((prev) => ({ ...prev, nueva: "Falta mayúscula, número o carácter especial" }));
+      if (value.length > 0) {
+        const { valid, message } = validateNewPassword(value);
+        setErrores((prev) => ({ ...prev, nueva: valid ? "" : message }));
       } else {
         setErrores((prev) => ({ ...prev, nueva: "" }));
       }
@@ -79,13 +59,10 @@ export default function ResetPassword() {
       toast.error("Por favor, llena todos los campos.", { duration: 5000 });
       return false;
     }
-    
-    const tieneMayuscula = /[A-Z]/.test(claves.nueva);
-    const tieneNumero = /\d/.test(claves.nueva);
-    const tieneEspecial = /[!@#$%^&*(),.?":{}|<>]/.test(claves.nueva);
-    
-    if (claves.nueva.length < 8 || !tieneMayuscula || !tieneNumero || !tieneEspecial) {
-      toast.error("La contraseña no cumple con los requisitos de seguridad.", { duration: 5000 });
+
+    const { valid, message } = validateNewPassword(claves.nueva);
+    if (!valid) {
+      toast.error(message, { duration: 5000 });
       return false;
     }
 
@@ -106,7 +83,7 @@ export default function ResetPassword() {
 
     if (stateSession && stateEmail) {
       // Flujo 1: Clave Temporal
-      endpoint = "/auth/confirm-new-password"; 
+      endpoint = "/auth/confirm-new-password";
       payload = {
         email: stateEmail,
         user_id_for_srp: stateUserIdForSrp,
@@ -114,18 +91,24 @@ export default function ResetPassword() {
         new_password: claves.nueva,
       };
     } else if (modoRecuperacion && stateEmail) {
-      // Flujo 2: Cognito Forgot Password (NUEVO)
+      // Flujo 2: Cognito Forgot Password
       endpoint = "/auth/reset-password";
       payload = {
         email: stateEmail,
         code: codigo,
         new_password: claves.nueva,
       };
-    } else if (token) {
-      // Flujo 3: Legacy Token
-      endpoint = "/auth/reset-password";
-      payload = { token: token, new_password: claves.nueva };
     }
+    // Fase 5: se retiró aquí el "Flujo 3" legacy, que leía un ?token=
+    // de la URL y lo enviaba como { token, new_password }. Confirmado
+    // como código muerto: ningún camino del frontend (login.jsx,
+    // forgotPassword.jsx) genera hoy un enlace con ese token — Login
+    // usa el flujo de Cognito (Flujo 1, arriba) y "Olvidé mi
+    // contraseña" siempre usa el flujo de código de 6 dígitos (Flujo
+    // 2). El backend (routes/auth_routes.py) sigue aceptando ese
+    // payload "mientras se migra frontend antiguo" para otros
+    // posibles clientes, así que esto no requirió ni requiere ningún
+    // cambio de backend.
 
     try {
       const respuesta = await fetch(getApiUrl(endpoint), {
@@ -151,8 +134,8 @@ export default function ResetPassword() {
     }
   };
 
-  // Validar si tiene acceso por cualquiera de los 3 flujos
-  const tieneAcceso = token || (stateSession && stateEmail) || (modoRecuperacion && stateEmail);
+  // Validar si tiene acceso por alguno de los 2 flujos vigentes
+  const tieneAcceso = (stateSession && stateEmail) || (modoRecuperacion && stateEmail);
 
   if (!tieneAcceso) {
     return (
@@ -172,7 +155,7 @@ export default function ResetPassword() {
     <div className="login-container">
       <div className="login-card">
         <h2 style={{ marginBottom: '10px' }}>Crear nueva contraseña</h2>
-        
+
         {/* MENSAJE ESPECIAL SI VIENE DE RECUPERACIÓN */}
         {modoRecuperacion && (
           <p style={{ marginBottom: '15px', fontSize: '0.9rem', color: '#15803d', backgroundColor: '#dcfce3', padding: '10px', borderRadius: '5px' }}>
@@ -180,17 +163,15 @@ export default function ResetPassword() {
           </p>
         )}
 
-        <div style={{ textAlign: 'left', backgroundColor: '#f8fafc', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.85rem', border: '1px solid #e2e8f0' }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#334155' }}>La contraseña debe incluir:</p>
-          <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <li style={{ color: claves.nueva.length >= 8 ? '#15803d' : '#64748b', fontWeight: claves.nueva.length >= 8 ? '600' : 'normal', transition: 'all 0.3s' }}>Mínimo 8 caracteres</li>
-            <li style={{ color: /[A-Z]/.test(claves.nueva) ? '#15803d' : '#64748b', fontWeight: /[A-Z]/.test(claves.nueva) ? '600' : 'normal', transition: 'all 0.3s' }}>Al menos 1 letra mayúscula</li>
-            <li style={{ color: /[!@#$%^&*(),.?":{}|<>]/.test(claves.nueva) ? '#15803d' : '#64748b', fontWeight: /[!@#$%^&*(),.?":{}|<>]/.test(claves.nueva) ? '600' : 'normal', transition: 'all 0.3s' }}>Al menos 1 carácter especial (!@#$...)</li>
-          </ul>
+        <div style={{ marginBottom: '20px' }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: '600', fontSize: '0.85rem', color: '#334155', textAlign: 'left' }}>
+            La contraseña debe incluir:
+          </p>
+          <PasswordChecklist value={claves.nueva} />
         </div>
 
         <form onSubmit={guardarNuevaContrasena}>
-          
+
           {/* INPUT PARA EL CÓDIGO (SOLO APARECE EN RECUPERACIÓN) */}
           {modoRecuperacion && (
             <div className="form-grupo" style={{ marginBottom: '15px' }}>
@@ -207,43 +188,28 @@ export default function ResetPassword() {
             </div>
           )}
 
-          <div className="form-grupo" style={{ marginBottom: '15px' }}>
-            <label className="form-label">Nueva contraseña</label>
-            <div style={{ position: 'relative', marginTop: '5px' }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="nueva"
-                value={claves.nueva}
-                onChange={manejarCambio}
-                placeholder="Escribe tu contraseña"
-                className={`input-field ${errores.nueva ? "input-error" : ""}`}
-                style={{ width: '100%', padding: '10px', paddingRight: '40px' }}
-              />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}>
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
+          <div style={{ marginBottom: '15px' }}>
+            <PasswordField
+              label="Nueva contraseña"
+              name="nueva"
+              value={claves.nueva}
+              onChange={manejarCambio}
+              placeholder="Escribe tu contraseña"
+              autoComplete="new-password"
+              error={errores.nueva}
+            />
           </div>
 
-          <div className="form-grupo" style={{ marginBottom: '20px' }}>
-            <label className="form-label">Confirmar contraseña</label>
-            <div style={{ position: 'relative', marginTop: '5px' }}>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmar"
-                value={claves.confirmar}
-                onChange={manejarCambio}
-                placeholder="Repite la contraseña"
-                className={`input-field ${errores.confirmar ? "input-error" : ""}`}
-                style={{ width: '100%', padding: '10px', paddingRight: '40px' }}
-              />
-              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}>
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-            {errores.confirmar && <p style={{ color: "red", fontSize: "12px", marginTop: "5px" }}>{errores.confirmar}</p>}
+          <div style={{ marginBottom: '20px' }}>
+            <PasswordField
+              label="Confirmar contraseña"
+              name="confirmar"
+              value={claves.confirmar}
+              onChange={manejarCambio}
+              placeholder="Repite la contraseña"
+              autoComplete="new-password"
+              error={errores.confirmar}
+            />
           </div>
 
           <button type="submit" disabled={cargando}

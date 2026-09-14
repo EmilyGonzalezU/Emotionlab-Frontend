@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { getApiUrl } from "../../config/api.js";
+import PageHeader from "../../ui/PageHeader.jsx";
 
 const VALORES_ALTO_BIENESTAR = new Set(["sí", "si", "true", "1", "alto bienestar", "alto"]);
 
@@ -191,16 +192,10 @@ export default function HomeEspecialista() {
   // ==========================================================
   return (
     <div className="home-container">
-      {/* ======================================================
-          TÍTULO
-         ====================================================== */}
-      <h1 style={{ color: "#17315E", fontSize: "26px", marginTop: 0, marginBottom: "8px", fontWeight: "bold" }}>
-        Panel del Especialista
-      </h1>
-
-      <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "25px", marginTop: 0 }}>
-        Resumen general de bienestar y agrupaciones de sesiones por fecha.
-      </p>
+      <PageHeader
+        title="Panel del especialista"
+        description="Resumen general de bienestar y agrupaciones de sesiones por fecha."
+      />
 
       <div className="dashboard-layout">
         {/* ====================================================

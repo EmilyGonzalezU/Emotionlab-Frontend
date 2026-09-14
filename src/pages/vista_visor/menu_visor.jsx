@@ -1,15 +1,11 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
-import Sidebar from "../../components/Sidebar";
-import "./menu_visor.css";
+import AppShell from "../../app/AppShell.jsx";
 
+/**
+ * MenuEspecialista ya no dibuja su propio layout (ver menu_admin.jsx
+ * para la misma nota). Este componente se usa tanto para /teacher/*
+ * como para /especialista/* en App.jsx — eso no cambia.
+ */
 export default function MenuEspecialista() {
-  return (
-    <div className="visor-layout">
-      <Sidebar />
-      <main className="visor-main-content">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <AppShell role="teacher" />;
 }

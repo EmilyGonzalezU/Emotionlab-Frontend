@@ -1,0 +1,23 @@
+.el-shell {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.el-shell-body {
+  margin-left: var(--shell-sidebar-width, 232px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.el-shell-main {
+  flex: 1;
+  padding: var(--space-8);
+  box-sizing: border-box;
+}
+
+@media (max-width: 960px) {
+  .el-shell-main {
+    padding: var(--space-4);
+  }
+}

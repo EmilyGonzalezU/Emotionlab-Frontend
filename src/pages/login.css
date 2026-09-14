@@ -1,175 +1,393 @@
-/* src/pages/Login.css */
-
-/* 1. Definimos tu paleta de colores globalmente */
-:root {
-  /* Estados */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
-
-  /* Primarios */
-  --color-primary: #17315e;
-  --color-primary-hover: #102548;
-  --color-primary-light: #2e5aac;
-  --color-secondary: #eaf2ff;
-
-  /* Fondos y bordes */
-  --color-bg-main: #f8fafc;
-  --color-bg-card: #ffffff;
-  --color-border: #e2e8f0;
-
-  /* Textos */
-  --color-text-main: #1e293b;
-  --color-text-sec: #64748b;
-  --color-disabled: #cbd5e1;
-}
-
-/* 2. Estructura base */
-html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  font-family: "Segoe UI", system-ui, sans-serif;
-}
-
-/* Contenedor que centra el rectángulo en la pantalla */
-.login-page-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.login-page {
   min-height: 100vh;
-  /* Usamos tu Azul Oscuro (#102548) para salvar esos ojos */
-  background-color: var(--color-primary-hover);
-}
-
-/* El rectángulo blanco (Tarjeta) */
-.login-card {
-  background-color: var(--color-bg-card);
-  padding: 3rem;
-  border-radius: 12px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--color-border);
   width: 100%;
-  max-width: 400px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 32px;
+  box-sizing: border-box;
+
+  background: #102548;
+
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+
+  color: #1f2a37;
 }
 
-/* Tipografía */
-.login-title {
-  margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+/* ============================================================
+   TARJETA
+   ============================================================ */
+
+.login-card {
+  width: min(430px, 100%);
+
+  box-sizing: border-box;
+
+  padding: 42px 44px 28px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.06),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+/* ============================================================
+   IDENTIDAD
+   ============================================================ */
+
+.login-header {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  margin-bottom: 36px;
+}
+
+.login-brand-mark {
+  flex: 0 0 auto;
+
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background: #17315e;
+  color: #ffffff;
+
+  font-size: 20px;
   font-weight: 700;
-  color: var(--color-primary); /* Azul marino */
+}
+
+.login-title {
+  margin: 0;
+
+  color: #17315e;
+
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+
+  letter-spacing: -0.02em;
 }
 
 .login-subtitle {
-  color: var(--color-text-sec); /* Gris */
-  margin-bottom: 2rem;
-  font-size: 0.95rem;
+  margin: 4px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+  line-height: 1.4;
 }
 
-/* Inputs y Labels */
+/* ============================================================
+   FORMULARIO
+   ============================================================ */
+
+.login-form {
+  width: 100%;
+}
+
 .form-group {
+  width: 100%;
+
+  margin-bottom: 22px;
+
   text-align: left;
-  margin-bottom: 1.5rem;
 }
 
 .form-label {
   display: block;
-  color: var(--color-text-main);
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+
+  margin: 0 0 8px;
+
+  color: #1f2a37;
+
+  font-size: 13px;
+  line-height: 1.3;
   font-weight: 600;
 }
 
+/* ============================================================
+   INPUT CORREO
+   ============================================================ */
+
 .form-input {
+  display: block;
+
   width: 100%;
-  padding: 0.8rem;
-  background-color: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text-main);
-  font-size: 1rem;
+  height: 44px;
+
   box-sizing: border-box;
-  transition: all 0.2s ease;
+
+  padding: 0 13px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #1f2a37;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .form-input::placeholder {
-  color: var(--color-disabled);
+  color: #94a3b8;
+}
+
+.form-input:hover:not(:disabled) {
+  border-color: #94a3b8;
 }
 
 .form-input:focus {
-  border-color: var(--color-primary-light);
-  /* Un brillo suave azul muy claro cuando haces clic */
-  box-shadow: 0 0 0 3px var(--color-secondary);
-  outline: none;
+  border-color: #17315e;
+
+  box-shadow:
+    0 0 0 3px rgba(23, 49, 94, 0.1);
 }
 
-/* Botón de ingresar */
-.form-button {
+.form-input:disabled {
+  cursor: not-allowed;
+
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.form-input-error {
+  border-color: #dc2626;
+}
+
+.form-input-error:focus {
+  border-color: #dc2626;
+
+  box-shadow:
+    0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* ============================================================
+   PASSWORD FIELD
+   ============================================================ */
+
+.login-password-wrapper {
   width: 100%;
-  padding: 0.85rem;
-  background-color: var(--color-primary);
-  border: none;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 1rem;
+
+  margin-bottom: 8px;
+
+  text-align: left;
+}
+
+/*
+ * El PasswordField pertenece al sistema UI compartido.
+ *
+ * Estas reglas ayudan a mantener la misma separación
+ * visual que el campo de correo.
+ */
+
+.login-password-wrapper label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #1f2a37;
+
+  font-size: 13px;
+  line-height: 1.3;
   font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    transform 0.1s;
-  margin-top: 1rem;
 }
 
-.form-button:hover {
-  background-color: var(--color-primary-hover);
-}
+/*
+ * Aseguramos que el input del PasswordField ocupe
+ * exactamente el mismo ancho que el correo.
+ */
 
-.form-button:active {
-  transform: scale(0.98);
-}
-
-.password-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-container .form-input {
+.login-password-wrapper input {
   width: 100%;
-  padding-right: 45px;
+  box-sizing: border-box;
 }
 
-.toggle-password {
-  position: absolute;
-  right: 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 18px;
-  color: #666;
-}
+/* ============================================================
+   ERRORES
+   ============================================================ */
 
-.toggle-password:hover {
-  color: #000;
-}
-
-.toggle-password svg {
-  font-size: 18px;
-}
-
-/* Mensaje de error debajo del input (¡Ahora usa tu paleta de colores!) */
 .field-error {
   display: block;
-  color: var(--color-error);
-  font-size: 13px;
-  margin-top: 5px;
+
+  margin-top: 6px;
+
+  color: #dc2626;
+
+  font-size: 12px;
+  line-height: 1.4;
   font-weight: 500;
+}
+
+/* ============================================================
+   RECUPERACIÓN
+   ============================================================ */
+
+.login-recovery {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 8px;
+}
+
+.login-recovery-link {
+  color: #17315e;
+
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition: color 0.15s ease;
+}
+
+.login-recovery-link:hover {
+  color: #102548;
+
+  text-decoration: underline;
+}
+
+.login-recovery-link:focus-visible {
+  outline: 2px solid rgba(23, 49, 94, 0.35);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ============================================================
+   BOTÓN
+   ============================================================ */
+
+.form-button {
+  width: 100%;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+
+  margin-top: 24px;
+
+  padding: 0 16px;
+
+  box-sizing: border-box;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: #17315e;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+.form-button:hover:not(:disabled) {
+  background: #102548;
+}
+
+.form-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.form-button:focus-visible {
+  outline: 2px solid rgba(23, 49, 94, 0.35);
+  outline-offset: 3px;
+}
+
+.form-button:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.7;
+}
+
+/* ============================================================
+   SPINNER
+   ============================================================ */
+
+.login-button-spinner {
+  width: 15px;
+  height: 15px;
+
+  box-sizing: border-box;
+
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+
+  border-radius: 50%;
+
+  animation: login-spinner 0.7s linear infinite;
+}
+
+@keyframes login-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.login-footer {
+  margin-top: 30px;
+  padding-top: 18px;
+
+  border-top: 1px solid #eef2f7;
+
+  text-align: center;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 560px) {
+  .login-page {
+    padding: 20px;
+  }
+
+  .login-card {
+    padding: 34px 28px 24px;
+  }
 }

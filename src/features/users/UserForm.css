@@ -1,0 +1,43 @@
+.el-user-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.el-user-form-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.el-user-form-field label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+.el-user-form-field input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.el-user-form-field input:focus {
+  border-color: var(--color-brand);
+}
+
+.el-user-form-field input:disabled {
+  background: var(--color-neutral-bg);
+  cursor: not-allowed;
+}
+
+.el-user-form-error {
+  margin: var(--space-3) 0 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}

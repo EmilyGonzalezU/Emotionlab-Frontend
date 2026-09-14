@@ -1,157 +1,360 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiArrowLeft, FiMail, FiUser, FiShield } from "react-icons/fi";
 import toast from "react-hot-toast";
-import "./creacion_visor.css";
-import { getApiUrl } from "../../config/api.js";
 
-// LOS NAVIGATE hacen q cambies d pagina sin necesidad de tener q anotarlo con un a
+import PageHeader from "../../ui/PageHeader.jsx";
+import Button from "../../ui/Button.jsx";
+import { api } from "../../lib/apiClient.js";
+import { isValidEmail } from "../../lib/validators.js";
+
+import "./creacion_visor.css";
+
 export default function CrearEspecialista() {
   const navigate = useNavigate();
-  // esto para q bloquee el boton de crear una vez apretado para evitar q se manden 2 solicitudes
+
   const [cargando, setCargando] = useState(false);
 
-  // se agrupan los datos en un bloque (¡Adiós contraseña temporal!)
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
-    rol: "teacher", // El backend sigue recibiendo "teacher", ¡no se rompe nada!
+    rol: "teacher",
   });
 
-  // esta funcion permite q el usuario pueda editar en el mismo texto sin necesidad de viajar a otra pagina
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const [errores, setErrores] = useState({
+    nombre: "",
+    email: "",
+  });
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    /*
+     * Limpiamos el error del campo mientras el usuario corrige.
+     */
+    if (errores[name]) {
+      setErrores((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
-  // Función para enviar los datos a Flask
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const validarFormulario = () => {
+    const nuevosErrores = {
+      nombre: "",
+      email: "",
+    };
+
+    const nombre = formData.nombre.trim();
+    const email = formData.email.trim();
+
+    if (!nombre) {
+      nuevosErrores.nombre =
+        "Debe ingresar el nombre completo.";
+    } else if (nombre.length < 3) {
+      nuevosErrores.nombre =
+        "El nombre debe tener al menos 3 caracteres.";
+    }
+
+    if (!email) {
+      nuevosErrores.email =
+        "Debe ingresar un correo electrónico.";
+    } else if (!isValidEmail(email)) {
+      nuevosErrores.email =
+        "Ingrese un correo electrónico válido.";
+    }
+
+    setErrores(nuevosErrores);
+
+    return !nuevosErrores.nombre && !nuevosErrores.email;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (cargando) {
+      return;
+    }
+
+    if (!validarFormulario()) {
+      toast.error("Revisa los datos ingresados.");
+      return;
+    }
+
     setCargando(true);
 
-    // Validaciones con toast
-    if (!formData.nombre.trim()) {
-      toast.error("Debe ingresar un nombre completo.", { duration: 3000 });
-      setCargando(false);
-      return;
-    }
-
-    if (formData.nombre.trim().length < 3) {
-      toast.error("El nombre debe tener al menos 3 caracteres.", { duration: 3000 });
-      setCargando(false);
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      toast.error("Debe ingresar un correo electrónico.", { duration: 3000 });
-      setCargando(false);
-      return;
-    }
-
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Ingrese un correo electrónico válido.", { duration: 3000 });
-      setCargando(false);
-      return;
-    }
-
     try {
-      // obtenemos el token q se creo cuando el usuario inicia sesion
-      const token = localStorage.getItem("token");
-
-      // se conecta con el backend
-      const respuesta = await fetch(getApiUrl("/users"), {
-        method: "POST", // post pq creamos un usuario nuevo
-        headers: {
-          "Content-Type": "application/json", // lo mandamos en formato json
-          Authorization: `Bearer ${token}`, // confirmamos el token
-        },
-        body: JSON.stringify(formData),
+      await api.post("/users", {
+        nombre: formData.nombre.trim(),
+        email: formData.email.trim(),
+        rol: formData.rol,
       });
 
-      // si la respuesta no es buena (un error) asumimos el codigo x defecto
-      if (!respuesta.ok) {
-        let mensajeError = `Error del servidor (Código: ${respuesta.status})`;
-
-        // se intenta leer el json, el catch es para q transformemos el error en algo legible sin q se caiga la pag
-        try {
-          const errorData = await respuesta.json();
-          if (errorData.error) mensajeError = errorData.error;
-        } catch {
-          console.warn("El backend devolvió un error sin formato JSON.");
+      toast.success(
+        "Usuario creado. Se ha enviado un correo con la clave temporal.",
+        {
+          duration: 5000,
         }
+      );
 
-        throw new Error(mensajeError);
-      }
-
-      // si el backend responde exitosamente (Aviso de que se envió el correo)
-      toast.success("¡Usuario creado! Se ha enviado un correo con la clave temporal.", { duration: 5000 });
-
-      // esperamos un ratito corto y se devuelve el usuario a la tabla de especialistas
       setTimeout(() => {
-        navigate("/admin/visualizadores"); 
-      }, 1500);
+        navigate("/admin/visualizadores", {
+          replace: true,
+        });
+      }, 1000);
     } catch (error) {
-      toast.error("Hubo un error al crear: " + error.message, { duration: 3000 });
+      console.error(
+        "Error creando usuario:",
+        error
+      );
+
+      toast.error(
+        error?.message ||
+          "No se pudo crear el usuario.",
+        {
+          duration: 4000,
+        }
+      );
     } finally {
-      // se apaga el modo cargando del inicio si tira error o se va el net o hay problemas
       setCargando(false);
     }
   };
 
-  // todo el diseño súper limpio
   return (
-    <div className="contenedor-formulario">
-      <div className="cabecera-form">
-        <button
-          className="btn-volver"
-          onClick={() => navigate("/admin/visualizadores")}>
-          ⬅ Volver
-        </button>
-        <h2>Crear Nuevo Usuario</h2>
-      </div>
+    <div className="el-create-user">
+      <PageHeader
+        title="Crear especialista"
+        description="Registra una nueva cuenta para acceder a la plataforma."
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() =>
+              navigate("/admin/visualizadores")
+            }
+            disabled={cargando}
+          >
+            <FiArrowLeft aria-hidden="true" />
+            Volver
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="tarjeta-form">
-        <div className="grupo-input">
-          <label>Nombre Completo:</label>
-          <input
-            type="text"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            required
-            placeholder="Ej: Juan Pérez"
-          />
+      <section className="el-create-user-card">
+        <div className="el-create-user-card-header">
+          <div>
+            <h2>Datos de la cuenta</h2>
+
+            <p>
+              Completa la información del nuevo usuario.
+              La contraseña temporal será generada y
+              enviada automáticamente.
+            </p>
+          </div>
         </div>
 
-        <div className="grupo-input">
-          <label>Correo Electrónico:</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            placeholder="usuario@emotionlab.cl"
-          />
-        </div>
+        <form
+          className="el-create-user-form"
+          onSubmit={handleSubmit}
+          noValidate
+        >
+          {/* ==================================================
+              NOMBRE
+             ================================================== */}
 
-        <div className="grupo-input">
-          <label>Rol en el sistema:</label>
-          <select name="rol" value={formData.rol} onChange={handleChange}>
-            {/* AQUÍ ESTÁ EL CAMBIO CLAVE VISUAL */}
-            <option value="teacher">Especialista</option>
-            <option value="admin">Administrador</option>
-          </select>
-        </div>
+          <div className="el-create-user-field">
+            <label
+              htmlFor="crear-nombre"
+              className="el-create-user-label"
+            >
+              Nombre completo
+            </label>
 
-        <button type="submit" className="btn-guardar" disabled={cargando}>
-          {cargando ? "Guardando..." : "Crear Usuario"}
-        </button>
-      </form>
+            <div className="el-create-user-input-wrapper">
+              <FiUser
+                className="el-create-user-input-icon"
+                aria-hidden="true"
+              />
+
+              <input
+                id="crear-nombre"
+                name="nombre"
+                type="text"
+                value={formData.nombre}
+                onChange={handleChange}
+                placeholder="Ej. Juan Pérez"
+                autoComplete="name"
+                disabled={cargando}
+                className={
+                  errores.nombre
+                    ? "el-create-user-input el-create-user-input-error"
+                    : "el-create-user-input"
+                }
+                aria-invalid={Boolean(
+                  errores.nombre
+                )}
+                aria-describedby={
+                  errores.nombre
+                    ? "crear-nombre-error"
+                    : undefined
+                }
+              />
+            </div>
+
+            {errores.nombre && (
+              <span
+                id="crear-nombre-error"
+                className="el-create-user-error"
+              >
+                {errores.nombre}
+              </span>
+            )}
+          </div>
+
+          {/* ==================================================
+              CORREO
+             ================================================== */}
+
+          <div className="el-create-user-field">
+            <label
+              htmlFor="crear-email"
+              className="el-create-user-label"
+            >
+              Correo electrónico
+            </label>
+
+            <div className="el-create-user-input-wrapper">
+              <FiMail
+                className="el-create-user-input-icon"
+                aria-hidden="true"
+              />
+
+              <input
+                id="crear-email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="usuario@ejemplo.cl"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck="false"
+                disabled={cargando}
+                className={
+                  errores.email
+                    ? "el-create-user-input el-create-user-input-error"
+                    : "el-create-user-input"
+                }
+                aria-invalid={Boolean(
+                  errores.email
+                )}
+                aria-describedby={
+                  errores.email
+                    ? "crear-email-error"
+                    : undefined
+                }
+              />
+            </div>
+
+            {errores.email && (
+              <span
+                id="crear-email-error"
+                className="el-create-user-error"
+              >
+                {errores.email}
+              </span>
+            )}
+          </div>
+
+          {/* ==================================================
+              ROL
+             ================================================== */}
+
+          <div className="el-create-user-field">
+            <label
+              htmlFor="crear-rol"
+              className="el-create-user-label"
+            >
+              Rol en el sistema
+            </label>
+
+            <div className="el-create-user-input-wrapper">
+              <FiShield
+                className="el-create-user-input-icon"
+                aria-hidden="true"
+              />
+
+              <select
+                id="crear-rol"
+                name="rol"
+                value={formData.rol}
+                onChange={handleChange}
+                disabled={cargando}
+                className="el-create-user-input el-create-user-select"
+              >
+                <option value="teacher">
+                  Especialista
+                </option>
+
+                <option value="admin">
+                  Administrador
+                </option>
+              </select>
+            </div>
+          </div>
+
+          {/* ==================================================
+              INFORMACIÓN
+             ================================================== */}
+
+          <div className="el-create-user-info">
+            <div className="el-create-user-info-icon">
+              <FiMail aria-hidden="true" />
+            </div>
+
+            <div>
+              <strong>Envío de credenciales</strong>
+
+              <p>
+                El sistema generará una contraseña
+                temporal y enviará las instrucciones de
+                acceso al correo indicado.
+              </p>
+            </div>
+          </div>
+
+          {/* ==================================================
+              ACCIONES
+             ================================================== */}
+
+          <div className="el-create-user-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() =>
+                navigate("/admin/visualizadores")
+              }
+              disabled={cargando}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              type="submit"
+              disabled={cargando}
+            >
+              {cargando
+                ? "Creando usuario..."
+                : "Crear usuario"}
+            </Button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }

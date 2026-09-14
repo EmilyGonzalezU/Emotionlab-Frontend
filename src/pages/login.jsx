@@ -1,19 +1,23 @@
 import React, { useState } from "react";
-import "./Login.css";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import "./login.css";
 import toast from "react-hot-toast";
 import { useNavigate, Link } from "react-router-dom";
+
 import { getApiUrl } from "../config/api.js";
+import { isValidEmail } from "../lib/validators.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import PasswordField from "../ui/PasswordField.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [showPassword, setShowPassword] = useState(false);
-
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (value) => {
     setEmail(value);
@@ -23,154 +27,340 @@ export default function Login() {
       return;
     }
 
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!regex.test(value)) {
+    if (!isValidEmail(value)) {
       setEmailError("Ingrese un correo válido.");
-    } else {
-      setEmailError("");
+      return;
     }
+
+    setEmailError("");
   };
 
   const validatePassword = (value) => {
     setPassword(value);
 
-    if (!value.trim()) {
+    if (!value) {
       setPasswordError("Debe ingresar una contraseña.");
-    } else if (value.length < 8) {
-      setPasswordError("La contraseña debe tener al menos 8 caracteres.");
-    } else {
-      setPasswordError("");
+      return;
     }
+
+    if (value.length < 8) {
+      setPasswordError(
+        "La contraseña debe tener al menos 8 caracteres."
+      );
+      return;
+    }
+
+    setPasswordError("");
   };
 
-  // AQUÍ ESTÁ EL ASYNC QUE SE HABÍA PERDIDO
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
 
-    if (emailError || passwordError) {
-      toast.error("Corrige los errores antes de continuar.");
+    if (isLoading) {
       return;
     }
 
-    if (!email || !password) {
-      toast.error("Complete todos los campos.");
+    /*
+     * Validamos nuevamente al enviar para evitar que el
+     * formulario pueda enviarse con datos inválidos.
+     */
+    let hasError = false;
+
+    if (!email.trim()) {
+      setEmailError("Debe ingresar un correo.");
+      hasError = true;
+    } else if (!isValidEmail(email)) {
+      setEmailError("Ingrese un correo válido.");
+      hasError = true;
+    }
+
+    if (!password) {
+      setPasswordError("Debe ingresar una contraseña.");
+      hasError = true;
+    } else if (password.length < 8) {
+      setPasswordError(
+        "La contraseña debe tener al menos 8 caracteres."
+      );
+      hasError = true;
+    }
+
+    if (hasError) {
+      toast.error("Revisa los datos ingresados.");
       return;
     }
+
+    setIsLoading(true);
 
     const toastId = toast.loading("Iniciando sesión...");
 
     try {
-      const response = await fetch(getApiUrl("/auth/login"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        getApiUrl("/auth/login"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        }
+      );
 
-      const data = await response.json();
+      let data = {};
 
-      if (!response.ok) {
-        throw new Error(data.error || "Credenciales inválidas");
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
       }
 
-      if (data.challenge === "NEW_PASSWORD_REQUIRED" || data.challengeName === "NEW_PASSWORD_REQUIRED" || !data.user) {
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Credenciales inválidas."
+        );
+      }
+
+      /*
+       * ========================================================
+       * NUEVA CONTRASEÑA OBLIGATORIA
+       * ========================================================
+       */
+
+      if (
+        data.challenge === "NEW_PASSWORD_REQUIRED" ||
+        data.challengeName === "NEW_PASSWORD_REQUIRED" ||
+        !data.user
+      ) {
         toast.dismiss(toastId);
-        toast.success("¡Clave temporal correcta! Por seguridad, debes crear una nueva.");
-        
-        const userIdForSrp = data.user_id_for_srp || (data.challengeParameters && data.challengeParameters.USER_ID_FOR_SRP) || email;
 
+        toast.success(
+          "Clave temporal correcta. Debes crear una nueva contraseña."
+        );
 
-        navigate("/reset-password", { 
-          state: { 
-            email: email, 
+        const userIdForSrp =
+          data.user_id_for_srp ||
+          (
+            data.challengeParameters &&
+            data.challengeParameters.USER_ID_FOR_SRP
+          ) ||
+          email.trim();
+
+        navigate("/reset-password", {
+          state: {
+            email: email.trim(),
             session: data.session,
-            user_id_for_srp: userIdForSrp
-          } 
+            user_id_for_srp: userIdForSrp,
+          },
+        });
+
+        return;
+      }
+
+      /*
+       * ========================================================
+       * LOGIN NORMAL
+       * ========================================================
+       */
+
+      if (!data.token || !data.user) {
+        throw new Error(
+          "La respuesta del servidor no contiene una sesión válida."
+        );
+      }
+
+      login(data.token, data.user);
+
+      toast.success(
+        "Bienvenido a EmotionLab.",
+        {
+          id: toastId,
+        }
+      );
+
+      /*
+       * Redirección inmediata según el rol.
+       */
+      if (data.user.rol === "admin") {
+        navigate("/admin", {
+          replace: true,
         });
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("rol", data.user.rol);
+      if (data.user.rol === "teacher") {
+        navigate("/teacher", {
+          replace: true,
+        });
+        return;
+      }
 
-      toast.success("¡Bienvenido a EmotionLab!", { id: toastId });
+      throw new Error(
+        "El usuario no tiene un rol válido configurado."
+      );
+    } catch (error) {
+      console.error("Error de login:", error);
 
-      setTimeout(() => {
-        if (data.user.rol === "admin") {
-          navigate("/admin", { replace: true });
-        } else if (data.user.rol === "teacher") {
-          navigate("/teacher", { replace: true });
-        }
-      }, 1500);
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || "Error al iniciar sesión", { id: toastId });
+      const message =
+        error instanceof TypeError
+          ? "No pudimos conectar con el servidor. Intenta nuevamente."
+          : error.message ||
+            "No fue posible iniciar sesión.";
+
+      toast.error(message, {
+        id: toastId,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="login-page-wrapper">
-      <div className="login-card">
-        <h2 className="login-title">EmotionLab</h2>
+    <main className="login-page">
+      <section
+        className="login-card"
+        aria-labelledby="login-title"
+      >
+        {/* ====================================================
+            IDENTIDAD
+           ==================================================== */}
 
-        <p className="login-subtitle">
-          Ingresa tus credenciales para continuar
-        </p>
-
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label className="form-label">Correo electrónico</label>
-
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => validateEmail(e.target.value)}
-              placeholder="Ingrese su correo electrónico."
-              className="form-input"
-              required
-            />
-
-            {emailError && <span className="field-error">{emailError}</span>}
+        <header className="login-header">
+          <div className="login-brand-mark">
+            E
           </div>
 
+          <div>
+            <h1
+              id="login-title"
+              className="login-title"
+            >
+              EmotionLab
+            </h1>
+
+            <p className="login-subtitle">
+              Plataforma de evaluación y análisis
+            </p>
+          </div>
+        </header>
+
+        {/* ====================================================
+            FORMULARIO
+           ==================================================== */}
+
+        <form
+          className="login-form"
+          onSubmit={handleLogin}
+          noValidate
+        >
+          {/* CORREO */}
+
           <div className="form-group">
-            <label className="form-label">Contraseña</label>
+            <label
+              htmlFor="login-email"
+              className="form-label"
+            >
+              Correo electrónico
+            </label>
 
-            <div className="password-container">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => validatePassword(e.target.value)}
-                placeholder="Ingrese su contraseña."
-                className="form-input"
-              />
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(event) =>
+                validateEmail(event.target.value)
+              }
+              placeholder="Ingrese su correo electrónico"
+              className={`form-input ${
+                emailError
+                  ? "form-input-error"
+                  : ""
+              }`}
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck="false"
+              disabled={isLoading}
+              aria-invalid={Boolean(emailError)}
+              aria-describedby={
+                emailError
+                  ? "login-email-error"
+                  : undefined
+              }
+            />
 
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-
-            {passwordError && (
-              <span className="field-error">{passwordError}</span>
+            {emailError && (
+              <span
+                id="login-email-error"
+                className="field-error"
+              >
+                {emailError}
+              </span>
             )}
           </div>
 
-          <Link to="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link>
+          {/* CONTRASEÑA */}
 
-          <button type="submit" className="form-button">
-            Ingresar
+          <div className="login-password-wrapper">
+            <PasswordField
+              label="Contraseña"
+              name="password"
+              value={password}
+              onChange={(event) =>
+                validatePassword(
+                  event.target.value
+                )
+              }
+              placeholder="Ingrese su contraseña"
+              autoComplete="current-password"
+              error={passwordError}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* RECUPERACIÓN */}
+
+          <div className="login-recovery">
+            <Link
+              to="/recuperar-contrasena"
+              className="login-recovery-link"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
+          {/* BOTÓN */}
+
+          <button
+            type="submit"
+            className="form-button"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span
+                  className="login-button-spinner"
+                  aria-hidden="true"
+                />
+                Iniciando sesión...
+              </>
+            ) : (
+              "Ingresar"
+            )}
           </button>
         </form>
-      </div>
-    </div>
+
+        {/* ====================================================
+            PIE
+           ==================================================== */}
+
+        <footer className="login-footer">
+          <span>
+            EmotionLab · Plataforma de apoyo a la evaluación
+          </span>
+        </footer>
+      </section>
+    </main>
   );
 }

@@ -16,6 +16,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-devtools": "^5.101.4",
+    "electron-updater": "^6.8.9",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "react": "^19.1.0",
@@ -45,6 +46,12 @@
     "icon": "public/icon.ico",
     "directories": {
       "output": "release"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "EmilyGonzalezU",
+      "repo": "EmotionLab-Frontend",
+      "releaseType": "release"
     },
     "files": [
       "electron/**/*",

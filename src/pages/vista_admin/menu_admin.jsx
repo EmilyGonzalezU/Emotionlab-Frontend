@@ -1,16 +1,12 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
-import SidebarAdmin from "../../components/SidebarAdmin"; // Ajusta la ruta si es necesario
-import "./menu_admin.css";
+import AppShell from "../../app/AppShell.jsx";
 
+/**
+ * MenuAdmin ya no dibuja su propio layout: el sidebar y el header
+ * de administración eran una copia casi idéntica de los de
+ * especialista (menu_visor.jsx), solo con otro componente de sidebar.
+ * Ambos delegan ahora en el mismo AppShell, configurado por rol.
+ */
 export default function MenuAdmin() {
-  return (
-    <div className="admin-layout">
-      <SidebarAdmin />
-
-      <main className="admin-main-content">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <AppShell role="admin" />;
 }

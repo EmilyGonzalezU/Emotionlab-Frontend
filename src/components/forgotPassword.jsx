@@ -3,21 +3,17 @@ import { toast } from 'react-hot-toast';
 import './forgotPassword.css';
 import { Link, useNavigate } from "react-router-dom"; 
 import { getApiUrl } from "../config/api.js";
+import { isValidEmail } from "../lib/validators.js";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate(); 
-
-  const validateEmail = (correo) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(correo);
-  };
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateEmail(email)) {
+    if (!isValidEmail(email)) {
       toast.error('Por favor, ingresa un correo válido');
       return;
     }

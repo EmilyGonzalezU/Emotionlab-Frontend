@@ -1,0 +1,44 @@
+.el-skeleton-line,
+.el-skeleton-block {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-line-soft) 25%,
+    var(--color-neutral-bg) 37%,
+    var(--color-line-soft) 63%
+  );
+  background-size: 400% 100%;
+  animation: el-skeleton-shimmer 1.4s ease infinite;
+}
+
+.el-skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.el-skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: var(--space-4);
+  align-items: center;
+}
+
+@keyframes el-skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-skeleton-line,
+  .el-skeleton-block {
+    animation: none;
+    opacity: 0.7;
+  }
+}

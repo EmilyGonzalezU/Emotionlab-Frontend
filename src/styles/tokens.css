@@ -1,0 +1,79 @@
+/* ============================================================
+   DESIGN TOKENS — EmotionLab
+   ============================================================
+   Formaliza como variables CSS los colores y medidas que ya
+   existían dispersos como literales (style={{ color: "#17315E" }})
+   en distintas pantallas. No introduce una paleta nueva: la marca
+   se mantiene (#17315E), solo se centraliza.
+
+   No se define aquí ninguna regla visual (nada de selectores).
+   Este archivo solo declara variables; hasta que los componentes
+   las consuman, importarlo no cambia ningún píxel existente.
+
+   Nota: se usa la pila de fuentes del sistema (system-ui / Segoe UI)
+   en vez de una fuente web descargada, porque EmotionLab es una
+   app de escritorio (Electron) que debe poder abrirse sin conexión.
+   ============================================================ */
+
+:root {
+  /* ---- Color de marca ---- */
+  --color-brand: #17315e;
+  --color-brand-strong: #0f1f3d;
+  --color-brand-soft: #eaf1ff;
+  --color-brand-soft-line: #c9d9f5;
+
+  /* ---- Texto y superficies ---- */
+  --color-ink: #1f2a37;
+  --color-ink-soft: #64748b;
+  --color-ink-faint: #94a3b8;
+
+  --color-surface: #ffffff;
+  --color-bg: #f4f6f9;
+  --color-line: #e2e8f0;
+  --color-line-soft: #edf1f5;
+  --color-neutral-bg: #f1f5f9;
+  --color-neutral-line: #e2e8f0;
+
+  /* ---- Color semántico (reservado a estados, nunca decorativo) ---- */
+  --color-success: #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-success-line: #bbf7d0;
+
+  --color-warning: #b45309;
+  --color-warning-bg: #fef3c7;
+  --color-warning-line: #fde68a;
+
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-danger-line: #fecaca;
+
+  /* ---- Tipografía ---- */
+  --font-sans:
+    "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Consolas", "SFMono-Regular", Menlo, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13.5px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+
+  /* ---- Espaciado (múltiplos de 4px) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* ---- Radio de borde (único, no arbitrario por pantalla) ---- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+
+  /* ---- Elevación: reservada a overlays reales (modal, dropdown) ---- */
+  --shadow-overlay: 0 8px 24px rgba(15, 31, 61, 0.16);
+  --shadow-focus: 0 0 0 3px rgba(23, 49, 94, 0.18);
+}
