@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import "./menu_visor.css";
 
-export default function MenuVisor() {
+export default function MenuEspecialista() {
   return (
     <div className="visor-layout">
       <Sidebar />

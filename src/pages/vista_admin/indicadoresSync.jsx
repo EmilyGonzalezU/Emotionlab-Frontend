@@ -1,5 +1,6 @@
 import React from "react";
-import ListaVisualizadores from "./visualizadores_admin";
+// Importamos la tabla pero le damos el nombre actualizado "ListaEspecialistas"
+import ListaEspecialistas from "./visualizadores_admin";
 import "./indicadoresSync.css";
 
 export default function IndicadoresSync() {
@@ -22,7 +23,8 @@ export default function IndicadoresSync() {
         style={{
           minWidth: 0,
         }}>
-        <ListaVisualizadores />
+        {/* Usamos la etiqueta con el nombre actualizado */}
+        <ListaEspecialistas />
       </div>
     </div>
   );

@@ -4,9 +4,9 @@ import toast from "react-hot-toast";
 import "./visualizadores_admin.css";
 import { getApiUrl } from "../../config/api.js";
 
-export default function ListaVisualizadores() {
+export default function ListaEspecialistas() {
   const navigate = useNavigate();
-  const [visualizadores, setVisualizadores] = useState([]);
+  const [especialistas, setEspecialistas] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
@@ -19,17 +19,17 @@ export default function ListaVisualizadores() {
   const mountedRef = useRef(false);
   const fetchingRef = useRef(false);
 
-  // Función formateadora para transformar "admin" -> "Administrador" y "teacher" -> "Visualizador"
+  // Función formateadora para transformar "admin" -> "Administrador" y "teacher" -> "Especialista"
   const obtenerNombreRol = (rol) => {
     const rolLower = String(rol || "").toLowerCase().trim();
     if (rolLower === "admin") return "Administrador";
-    if (rolLower === "teacher" || rolLower === "visor" || rolLower === "visualizador") {
-      return "Visualizador";
+    if (rolLower === "teacher" || rolLower === "visor" || rolLower === "visualizador" || rolLower === "especialista") {
+      return "Especialista";
     }
     return rol;
   };
 
-  const obtenerVisualizadores = useCallback(async () => {
+  const obtenerEspecialistas = useCallback(async () => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     try {
@@ -45,7 +45,7 @@ export default function ListaVisualizadores() {
       if (!respuesta.ok) throw new Error(`Error: ${respuesta.status}`);
       const dataReales = await respuesta.json();
       if (mountedRef.current) {
-        setVisualizadores(dataReales);
+        setEspecialistas(dataReales);
       }
     } catch (error) {
       if (mountedRef.current) {
@@ -58,26 +58,26 @@ export default function ListaVisualizadores() {
 
   useEffect(() => {
     mountedRef.current = true;
-    obtenerVisualizadores();
+    obtenerEspecialistas();
     return () => {
       mountedRef.current = false;
     };
-  }, [obtenerVisualizadores]);
+  }, [obtenerEspecialistas]);
 
-  const visualizadoresFiltrados = visualizadores.filter((visor) => {
+  const especialistasFiltrados = especialistas.filter((especialista) => {
     const textoBuscado = busqueda.toLowerCase();
     return (
-      visor.nombre?.toLowerCase().includes(textoBuscado) ||
-      visor.email?.toLowerCase().includes(textoBuscado)
+      especialista.nombre?.toLowerCase().includes(textoBuscado) ||
+      especialista.email?.toLowerCase().includes(textoBuscado)
     );
   });
 
-  const iniciarEdicion = (visor) => {
-    setEditandoId(visor.uid);
+  const iniciarEdicion = (especialista) => {
+    setEditandoId(especialista.uid);
     setDatosEdicion({
-      nombre: visor.nombre,
-      email: visor.email,
-      rol: visor.rol,
+      nombre: especialista.nombre,
+      email: especialista.email,
+      rol: especialista.rol,
     });
   };
 
@@ -104,9 +104,9 @@ export default function ListaVisualizadores() {
 
       if (!respuesta.ok) throw new Error("Error al actualizar");
 
-      setVisualizadores(
-        visualizadores.map((visor) =>
-          visor.uid === uid ? { ...visor, ...datosEdicion } : visor,
+      setEspecialistas(
+        especialistas.map((especialista) =>
+          especialista.uid === uid ? { ...especialista, ...datosEdicion } : especialista,
         ),
       );
 
@@ -158,9 +158,9 @@ export default function ListaVisualizadores() {
                   if (!respuesta.ok) throw new Error("Error al desactivar");
 
                   // Actualizar el estado local
-                  setVisualizadores(
-                    visualizadores.map((visor) =>
-                      visor.uid === uid ? { ...visor, activo: false } : visor,
+                  setEspecialistas(
+                    especialistas.map((especialista) =>
+                      especialista.uid === uid ? { ...especialista, activo: false } : especialista,
                     ),
                   );
 
@@ -222,9 +222,9 @@ export default function ListaVisualizadores() {
                   if (!respuesta.ok) throw new Error("Error al activar");
 
                   // Actualizar el estado local
-                  setVisualizadores(
-                    visualizadores.map((visor) =>
-                      visor.uid === uid ? { ...visor, activo: true } : visor,
+                  setEspecialistas(
+                    especialistas.map((especialista) =>
+                      especialista.uid === uid ? { ...especialista, activo: true } : especialista,
                     ),
                   );
 
@@ -285,8 +285,8 @@ export default function ListaVisualizadores() {
                   );
                   if (!respuesta.ok) throw new Error("Error al eliminar");
 
-                  setVisualizadores(
-                    visualizadores.filter((visor) => visor.uid !== uid),
+                  setEspecialistas(
+                    especialistas.filter((especialista) => especialista.uid !== uid),
                   );
                   toast.success("Usuario eliminado correctamente", {
                     duration: 5000,
@@ -326,11 +326,11 @@ export default function ListaVisualizadores() {
   return (
     <div className="contenedor-tabla-admin">
       <div className="cabecera-tabla">
-        <h2>Gestión de Visualizadores</h2>
+        <h2>Gestión de Especialistas</h2>
         <button
           className="btn-crear"
           onClick={() => navigate("/admin/crear-visualizador")}>
-          + Crear Visualizador
+          + Crear Especialista
         </button>
       </div>
 
@@ -356,10 +356,10 @@ export default function ListaVisualizadores() {
             </tr>
           </thead>
           <tbody>
-            {visualizadoresFiltrados.length > 0 ? (
-              visualizadoresFiltrados.map((visor, index) => (
-                <tr key={visor.uid || index}>
-                  {editandoId === visor.uid ? (
+            {especialistasFiltrados.length > 0 ? (
+              especialistasFiltrados.map((especialista, index) => (
+                <tr key={especialista.uid || index}>
+                  {editandoId === especialista.uid ? (
                     <>
                       <td>
                         <input
@@ -385,23 +385,23 @@ export default function ListaVisualizadores() {
                           value={datosEdicion.rol}
                           onChange={handleChangeEdicion}
                           className="input-buscador"
-                          disabled={visor.uid === miUid}
-                          title={visor.uid === miUid ? "No puedes cambiar tu propio rol" : ""}
+                          disabled={especialista.uid === miUid}
+                          title={especialista.uid === miUid ? "No puedes cambiar tu propio rol" : ""}
                           style={{ padding: "6px 10px" }}>
-                          <option value="teacher">Visualizador</option>
+                          <option value="teacher">Especialista</option>
                           <option value="admin">Administrador</option>
                         </select>
                       </td>
                       <td>
                         <span
-                          className={`badge-estado ${visor.activo ? "activo" : "inactivo"}`}>
-                          {visor.activo ? "Activo" : "Inactivo"}
+                          className={`badge-estado ${especialista.activo ? "activo" : "inactivo"}`}>
+                          {especialista.activo ? "Activo" : "Inactivo"}
                         </span>
                       </td>
                       <td className="celda-acciones">
                         <button
                           className="btn-accion btn-editar"
-                          onClick={() => guardarEdicion(visor.uid)}
+                          onClick={() => guardarEdicion(especialista.uid)}
                           title="Guardar Cambios">
                           💾
                         </button>
@@ -415,49 +415,49 @@ export default function ListaVisualizadores() {
                     </>
                   ) : (
                     <>
-                      <td className="fw-bold">{visor.nombre}</td>
-                      <td>{visor.email}</td>
+                      <td className="fw-bold">{especialista.nombre}</td>
+                      <td>{especialista.email}</td>
                       <td>
                         <span className="badge-rol">
-                          {obtenerNombreRol(visor.rol)}
+                          {obtenerNombreRol(especialista.rol)}
                         </span>
                       </td>
                       <td>
                         <span
-                          className={`badge-estado ${visor.activo ? "activo" : "inactivo"}`}>
-                          {visor.activo ? "Activo" : "Inactivo"}
+                          className={`badge-estado ${especialista.activo ? "activo" : "inactivo"}`}>
+                          {especialista.activo ? "Activo" : "Inactivo"}
                         </span>
                       </td>
                       <td className="celda-acciones">
                         <button
                           className="btn-accion btn-editar"
-                          onClick={() => iniciarEdicion(visor)}
+                          onClick={() => iniciarEdicion(especialista)}
                           title="Editar">
                           ✏️
                         </button>
 
-                      {visor.activo ? (
+                      {especialista.activo ? (
                         <button
                           className="btn-accion btn-desactivar"
-                          onClick={() => handleDesactivar(visor.uid)}
-                          disabled={visor.uid === miUid}
-                          title={visor.uid === miUid ? "No puedes desactivar tu propia cuenta" : "Desactivar"}>
+                          onClick={() => handleDesactivar(especialista.uid)}
+                          disabled={especialista.uid === miUid}
+                          title={especialista.uid === miUid ? "No puedes desactivar tu propia cuenta" : "Desactivar"}>
                           🚫
                         </button>
                         ) : (
                         <button
                           className="btn-accion btn-activar"
-                          onClick={() => handleActivar(visor.uid)}
-                          disabled={visor.uid === miUid}
-                          title={visor.uid === miUid ? "No puedes activar tu propia cuenta" : "Activar"}>
+                          onClick={() => handleActivar(especialista.uid)}
+                          disabled={especialista.uid === miUid}
+                          title={especialista.uid === miUid ? "No puedes activar tu propia cuenta" : "Activar"}>
                           ✅
                         </button>
                         )}
                         <button
                           className="btn-accion btn-eliminar"
-                          onClick={() => handleEliminar(visor.uid)}
-                          disabled={visor.uid === miUid} 
-                          title={visor.uid === miUid ? "No puedes eliminar tu propia cuenta" : "Eliminar"}>
+                          onClick={() => handleEliminar(especialista.uid)}
+                          disabled={especialista.uid === miUid} 
+                          title={especialista.uid === miUid ? "No puedes eliminar tu propia cuenta" : "Eliminar"}>
                           🗑️
                         </button>
                       </td>
@@ -470,7 +470,7 @@ export default function ListaVisualizadores() {
                 <td colSpan="5" className="tabla-vacia">
                   {busqueda
                     ? "No se encontraron resultados."
-                    : "No hay visualizadores registrados aún."}
+                    : "No hay especialistas registrados aún."}
                 </td>
               </tr>
             )}

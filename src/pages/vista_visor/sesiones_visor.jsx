@@ -86,7 +86,7 @@ const procesarSesionRaw = (item, index) => {
   };
 };
 
-const SesionesVisor = () => {
+const SesionesEspecialista = () => {
   const navigate = useNavigate();
   const mountedRef = useRef(false);
   const fetchingRef = useRef(false);
@@ -597,4 +597,4 @@ const SesionesVisor = () => {
   );
 };
 
-export default SesionesVisor;
+export default SesionesEspecialista;

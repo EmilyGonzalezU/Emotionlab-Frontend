@@ -5,11 +5,11 @@ import toast from "react-hot-toast";
 import "../vista_admin/cuenta_admin.css";
 import { getApiUrl } from "../../config/api.js";
 
-export default function CuentaVisor() {
+export default function CuentaEspecialista() {
   const mountedRef = useRef(false);
   const fetchingRef = useRef(false);
 
-  // guardamos el correo y nombre del visor para q se visualice
+  // guardamos el correo y nombre del especialista para q se visualice
   const [datosUser, setDatosUser] = useState({
     nombre: "Cargando...",
     email: "Cargando...",
@@ -267,11 +267,11 @@ export default function CuentaVisor() {
                 <p className="info-etiqueta" style={{ marginBottom: "10px" }}>
                   Rol en el Sistema
                 </p>
-                {/* Etiqueta adaptada para el visualizador */}
+                {/* AQUÍ ESTÁ EL CAMBIO CLAVE A "ESPECIALISTA" */}
                 <span
                   className="badge-estado listo badge-rol"
                   style={{ backgroundColor: "#DBEAFE", color: "#1E40AF" }}>
-                  Visualizador
+                  Especialista
                 </span>
               </div>
             </div>

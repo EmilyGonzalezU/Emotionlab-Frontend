@@ -5,7 +5,7 @@ import { getApiUrl } from "../../config/api.js";
 
 const VALORES_ALTO_BIENESTAR = new Set(["sí", "si", "true", "1", "alto bienestar", "alto"]);
 
-export default function HomeTeacher() {
+export default function HomeEspecialista() {
   const navigate = useNavigate();
   const mountedRef = useRef(false);
   const fetchingRef = useRef(false);
@@ -195,7 +195,7 @@ export default function HomeTeacher() {
           TÍTULO
          ====================================================== */}
       <h1 style={{ color: "#17315E", fontSize: "26px", marginTop: 0, marginBottom: "8px", fontWeight: "bold" }}>
-        Panel del Visualizador
+        Panel del Especialista
       </h1>
 
       <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "25px", marginTop: 0 }}>

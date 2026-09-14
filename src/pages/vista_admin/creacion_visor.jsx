@@ -5,7 +5,7 @@ import "./creacion_visor.css";
 import { getApiUrl } from "../../config/api.js";
 
 // LOS NAVIGATE hacen q cambies d pagina sin necesidad de tener q anotarlo con un a
-export default function CrearVisualizador() {
+export default function CrearEspecialista() {
   const navigate = useNavigate();
   // esto para q bloquee el boton de crear una vez apretado para evitar q se manden 2 solicitudes
   const [cargando, setCargando] = useState(false);
@@ -14,7 +14,7 @@ export default function CrearVisualizador() {
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
-    rol: "teacher",
+    rol: "teacher", // El backend sigue recibiendo "teacher", ¡no se rompe nada!
   });
 
   // esta funcion permite q el usuario pueda editar en el mismo texto sin necesidad de viajar a otra pagina
@@ -90,14 +90,14 @@ export default function CrearVisualizador() {
       // si el backend responde exitosamente (Aviso de que se envió el correo)
       toast.success("¡Usuario creado! Se ha enviado un correo con la clave temporal.", { duration: 5000 });
 
-      // dsperamos un ratito corto y se devuelve el usuario a la tabla de visualizadores
+      // esperamos un ratito corto y se devuelve el usuario a la tabla de especialistas
       setTimeout(() => {
-        navigate("/admin/visualizadores");
+        navigate("/admin/visualizadores"); 
       }, 1500);
     } catch (error) {
       toast.error("Hubo un error al crear: " + error.message, { duration: 3000 });
     } finally {
-      // se apaga el modo cargando del inicio si tira errpr o se va el net o hay problemas
+      // se apaga el modo cargando del inicio si tira error o se va el net o hay problemas
       setCargando(false);
     }
   };
@@ -142,7 +142,8 @@ export default function CrearVisualizador() {
         <div className="grupo-input">
           <label>Rol en el sistema:</label>
           <select name="rol" value={formData.rol} onChange={handleChange}>
-            <option value="teacher">Visualizador</option>
+            {/* AQUÍ ESTÁ EL CAMBIO CLAVE VISUAL */}
+            <option value="teacher">Especialista</option>
             <option value="admin">Administrador</option>
           </select>
         </div>

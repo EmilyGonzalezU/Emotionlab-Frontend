@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getApiUrl } from "../../config/api.js";
 import toast from "react-hot-toast";
+// Mantenemos la ruta original del CSS para no romper el diseño, 
+// a menos que cambies el nombre de la carpeta en el futuro.
 import "../vista_visor/sesiones_visor.css"; 
 
 export default function AuditLogs() {
@@ -35,7 +37,6 @@ export default function AuditLogs() {
       
       console.log("Datos de auditoría recibidos:", data);
 
-      // 🛡️ AQUÍ ESTABA EL ERROR: Faltaba el if
       if (Array.isArray(data)) {
         setLogsAudit(data);
       } else {
@@ -207,7 +208,6 @@ export default function AuditLogs() {
                   <span className="sesion-col">
                     {pestañaLogs === "LOGIN" ? (
                       <div style={{ display: "flex", flexDirection: "column" }}>
-                        {/* 🎨 AQUÍ ESTÁ EL DISEÑO ACTUALIZADO CON LOS NUEVOS ÍCONOS */}
                         <span style={{ 
                           color: actUpper === "LOGIN_OK" ? "#166534" : (actUpper.includes("PASSWORD") ? "#0284c7" : "#991b1b"), 
                           fontWeight: "600", fontSize: "0.9rem" 

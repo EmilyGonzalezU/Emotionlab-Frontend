@@ -10,17 +10,18 @@ import ResetPassword from './pages/resetPassword.jsx';
 import Login from "./pages/login.jsx";
 import MenuAdmin from "./pages/vista_admin/menu_admin.jsx";
 import HomeAdmin from "./pages/vista_admin/home_admin.jsx";
-import ListaVisualizadores from "./pages/vista_admin/visualizadores_admin.jsx";
-import CrearVisualizador from "./pages/vista_admin/creacion_visor.jsx";
+// IMPORTANTE: Mantenemos la ruta del archivo, pero cambiamos el nombre del componente
+import ListaEspecialistas from "./pages/vista_admin/visualizadores_admin.jsx";
+import CrearEspecialista from "./pages/vista_admin/creacion_visor.jsx";
 import CuentaAdmin from "./pages/vista_admin/cuenta_admin.jsx";
 import SolicitudesAdmin from "./pages/vista_admin/solicitudes_admin.jsx";
 import AuditLogs from "./pages/vista_admin/auditLogs.jsx"; 
 
-// TEACHER
-import MenuVisor from "./pages/vista_visor/menu_visor.jsx";
-import HomeTeacher from "./pages/vista_visor/home_visor.jsx";
-import CuentaVisor from "./pages/vista_visor/cuenta_visor.jsx";
-import SesionesVisor from "./pages/vista_visor/sesiones_visor.jsx";
+// TEACHER / ESPECIALISTA
+import MenuEspecialista from "./pages/vista_visor/menu_visor.jsx";
+import HomeEspecialista from "./pages/vista_visor/home_visor.jsx";
+import CuentaEspecialista from "./pages/vista_visor/cuenta_visor.jsx";
+import SesionesEspecialista from "./pages/vista_visor/sesiones_visor.jsx";
 import SesionDetalle from "./pages/vista_visor/sesion_detalle.jsx";
 
 function App() {
@@ -46,9 +47,10 @@ function App() {
             }>
             <Route index element={<HomeAdmin />} />
 
-            <Route path="visualizadores" element={<ListaVisualizadores />} />
+            {/* Mantenemos los paths intactos para no romper la navegación interna */}
+            <Route path="visualizadores" element={<ListaEspecialistas />} />
 
-            <Route path="crear-visualizador" element={<CrearVisualizador />} />
+            <Route path="crear-visualizador" element={<CrearEspecialista />} />
             
             <Route path="solicitudes" element={<SolicitudesAdmin />} />
 
@@ -66,36 +68,36 @@ function App() {
             path="/teacher"
             element={
               <RutaProtegida rolPermitido="teacher">
-                <MenuVisor />
+                <MenuEspecialista />
               </RutaProtegida>
             }>
-            <Route index element={<HomeTeacher />} />
+            <Route index element={<HomeEspecialista />} />
 
-            <Route path="sesiones" element={<SesionesVisor />} />
+            <Route path="sesiones" element={<SesionesEspecialista />} />
 
             <Route path="sesiones/:id" element={<SesionDetalle />} />
 
-            <Route path="cuenta" element={<CuentaVisor />} />
+            <Route path="cuenta" element={<CuentaEspecialista />} />
           </Route>
 
           {/* =========================
-              ALIAS VISUALIZADOR
+              ALIAS ESPECIALISTA
              ========================= */}
 
           <Route
-            path="/visualizador"
+            path="/especialista"
             element={
               <RutaProtegida rolPermitido="teacher">
-                <MenuVisor />
+                <MenuEspecialista />
               </RutaProtegida>
             }>
-            <Route index element={<HomeTeacher />} />
+            <Route index element={<HomeEspecialista />} />
 
-            <Route path="sesiones" element={<SesionesVisor />} />
+            <Route path="sesiones" element={<SesionesEspecialista />} />
 
             <Route path="sesiones/:id" element={<SesionDetalle />} />
 
-            <Route path="cuenta" element={<CuentaVisor />} />
+            <Route path="cuenta" element={<CuentaEspecialista />} />
           </Route>
         </Routes>
       </HashRouter>
