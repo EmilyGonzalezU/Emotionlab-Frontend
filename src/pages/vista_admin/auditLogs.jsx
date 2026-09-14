@@ -56,11 +56,19 @@ export default function AuditLogs() {
     cargarLogs();
   }, []);
 
-  const logsFiltrados = logsAudit.filter(log => {
-    const act = log.action.toUpperCase();
+  // 🔄 AQUÍ ESTÁ LA MAGIA: Ordenamos de MÁS NUEVO a MÁS VIEJO antes de filtrar
+  const logsOrdenados = [...logsAudit].sort((a, b) => {
+    const fechaA = new Date(a.iso_timestamp || a.timestamp || 0).getTime();
+    const fechaB = new Date(b.iso_timestamp || b.timestamp || 0).getTime();
+    return fechaB - fechaA; // El mayor (más reciente) gana y va primero
+  });
+
+  const logsFiltrados = logsOrdenados.filter(log => {
+    const act = (log.action || "").toUpperCase();
     if (pestañaLogs === "LOGIN") return act.includes("LOGIN") || act.includes("PASSWORD");
     if (pestañaLogs === "REPORT") return act.includes("REPORT");
-    if (pestañaLogs === "USER") return act.includes("USER") || act.includes("USUARIO") || act.includes("CUENTA");
+    // Agregamos APPROV y REJECT para pillar las solicitudes de usuarios
+    if (pestañaLogs === "USER") return act.includes("USER") || act.includes("USUARIO") || act.includes("CUENTA") || act.includes("APPROV") || act.includes("REJECT");
     return false;
   });
 
@@ -160,11 +168,11 @@ export default function AuditLogs() {
                 : "Fecha desconocida";
 
               let accionFmt = log.action;
-              const actUpper = log.action.toUpperCase();
+              const actUpper = (log.action || "").toUpperCase();
               
               if (actUpper.includes("REQUESTED")) accionFmt = "📄 Solicitó Informe";
-              else if (actUpper.includes("APPROVED")) accionFmt = "✅ Aprobó Informe";
-              else if (actUpper.includes("REJECTED")) accionFmt = "❌ Rechazó Informe";
+              else if (actUpper.includes("APPROVED") || actUpper.includes("APPROV")) accionFmt = "✅ Aprobó Usuario/Informe";
+              else if (actUpper.includes("REJECTED") || actUpper.includes("REJECT")) accionFmt = "❌ Rechazó Usuario/Informe";
               else if (actUpper.includes("DOWNLOADED")) accionFmt = "📥 Descargó Informe";
               else if (actUpper.includes("CREA") || actUpper.includes("CREATED")) accionFmt = "➕ Creó Usuario";
               else if (actUpper.includes("ACTUALIZA") || actUpper.includes("UPDATED")) accionFmt = "✏️ Editó Usuario";
@@ -183,7 +191,7 @@ export default function AuditLogs() {
                   textoSecundario = `Sesión ID: ${idReal}`;
                 }
               } else {
-                textoSecundario = log.extra?.target_email ? `Especialista: ${log.extra.target_email}` : "";
+                textoSecundario = log.extra?.target_email ? `Target: ${log.extra.target_email}` : "";
               }
 
               return (
