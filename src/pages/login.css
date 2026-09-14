@@ -1,393 +1,257 @@
-.login-page {
-  min-height: 100vh;
+/* src/pages/Login.css */
+
+/* 1. Definimos tu paleta de colores globalmente */
+:root {
+  /* Estados */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Primarios */
+  --color-primary: #17315e;
+  --color-primary-hover: #102548;
+  --color-primary-light: #2e5aac;
+  --color-secondary: #eaf2ff;
+
+  /* Fondos y bordes */
+  --color-bg-main: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-border: #e2e8f0;
+
+  /* Textos */
+  --color-text-main: #1e293b;
+  --color-text-sec: #64748b;
+  --color-disabled: #cbd5e1;
+}
+
+/* 2. Estructura base */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
   width: 100%;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+/* Contenedor que centra el rectángulo en la pantalla.
+   Nota: el componente real (login.jsx) usa <main className="login-page">,
+   no ".login-page-wrapper" — esa clase quedó huérfana en una versión
+   anterior de este archivo y se corrige aquí. */
+.login-page {
   display: flex;
-  align-items: center;
   justify-content: center;
-
-  padding: 32px;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
   box-sizing: border-box;
-
-  background: #102548;
-
-  font-family:
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-
-  color: #1f2a37;
+  /* Usamos tu Azul Oscuro (#102548) para salvar esos ojos */
+  background-color: var(--color-primary-hover);
 }
 
-/* ============================================================
-   TARJETA
-   ============================================================ */
-
+/* El rectángulo blanco (Tarjeta). Se mantiene "text-align: center" a
+   propósito (también lo usa resetPassword.jsx, que comparte esta
+   clase): el encabezado y el formulario de abajo declaran su propia
+   alineación izquierda explícitamente, así que no dependen de esto. */
 .login-card {
-  width: min(430px, 100%);
-
-  box-sizing: border-box;
-
-  padding: 42px 44px 28px;
-
-  background: #ffffff;
-
-  border: 1px solid #e2e8f0;
+  background-color: var(--color-bg-card);
+  padding: 3rem;
   border-radius: 12px;
-
   box-shadow:
-    0 10px 30px rgba(15, 23, 42, 0.06),
-    0 2px 8px rgba(15, 23, 42, 0.04);
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-/* ============================================================
-   IDENTIDAD
-   ============================================================ */
-
+/* Encabezado: marca + título/subtítulo, en fila */
 .login-header {
   display: flex;
   align-items: center;
-
-  gap: 14px;
-
-  margin-bottom: 36px;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  text-align: left;
 }
 
 .login-brand-mark {
-  flex: 0 0 auto;
-
-  width: 42px;
-  height: 42px;
-
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 8px;
-
-  background: #17315e;
+  background-color: var(--color-primary);
   color: #ffffff;
-
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 700;
 }
 
+/* Tipografía */
 .login-title {
   margin: 0;
-
-  color: #17315e;
-
-  font-size: 22px;
-  line-height: 1.2;
+  font-size: 1.5rem;
   font-weight: 700;
-
-  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-primary); /* Azul marino */
 }
 
 .login-subtitle {
-  margin: 4px 0 0;
-
-  color: #64748b;
-
-  font-size: 13px;
-  line-height: 1.4;
+  margin: 2px 0 0 0;
+  color: var(--color-text-sec); /* Gris */
+  font-size: 0.85rem;
 }
 
-/* ============================================================
-   FORMULARIO
-   ============================================================ */
-
+/* Formulario: todo su contenido va alineado a la izquierda */
 .login-form {
-  width: 100%;
+  text-align: left;
 }
 
+/* Inputs y Labels */
 .form-group {
-  width: 100%;
-
-  margin-bottom: 22px;
-
   text-align: left;
+  margin-bottom: 1.5rem;
 }
 
 .form-label {
   display: block;
-
-  margin: 0 0 8px;
-
-  color: #1f2a37;
-
-  font-size: 13px;
-  line-height: 1.3;
+  color: var(--color-text-main);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
-/* ============================================================
-   INPUT CORREO
-   ============================================================ */
-
 .form-input {
-  display: block;
-
   width: 100%;
-  height: 44px;
-
+  padding: 0.8rem;
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-main);
+  font-size: 1rem;
   box-sizing: border-box;
-
-  padding: 0 13px;
-
-  border: 1px solid #cbd5e1;
-  border-radius: 7px;
-
-  background: #ffffff;
-
-  color: #1f2a37;
-
-  font-family: inherit;
-  font-size: 14px;
-
-  outline: none;
-
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .form-input::placeholder {
-  color: #94a3b8;
-}
-
-.form-input:hover:not(:disabled) {
-  border-color: #94a3b8;
+  color: var(--color-disabled);
 }
 
 .form-input:focus {
-  border-color: #17315e;
-
-  box-shadow:
-    0 0 0 3px rgba(23, 49, 94, 0.1);
-}
-
-.form-input:disabled {
-  cursor: not-allowed;
-
-  background: #f8fafc;
-  color: #94a3b8;
+  border-color: var(--color-primary-light);
+  /* Un brillo suave azul muy claro cuando haces clic */
+  box-shadow: 0 0 0 3px var(--color-secondary);
+  outline: none;
 }
 
 .form-input-error {
-  border-color: #dc2626;
+  border-color: var(--color-error);
 }
 
 .form-input-error:focus {
-  border-color: #dc2626;
-
-  box-shadow:
-    0 0 0 3px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
-/* ============================================================
-   PASSWORD FIELD
-   ============================================================ */
-
+/* Envoltorio del campo de contraseña (PasswordField). Antes no tenía
+   ninguna regla propia, así que heredaba el text-align: center de
+   .login-card — por eso el campo "Contraseña" se veía centrado/corrido
+   respecto al de "Correo electrónico". Se corrige aquí, sin tocar
+   PasswordField ni su CSS. */
 .login-password-wrapper {
-  width: 100%;
-
-  margin-bottom: 8px;
-
   text-align: left;
+  margin-bottom: 1.5rem;
 }
 
-/*
- * El PasswordField pertenece al sistema UI compartido.
- *
- * Estas reglas ayudan a mantener la misma separación
- * visual que el campo de correo.
- */
-
-.login-password-wrapper label {
-  display: block;
-
-  margin-bottom: 8px;
-
-  color: #1f2a37;
-
-  font-size: 13px;
-  line-height: 1.3;
-  font-weight: 600;
-}
-
-/*
- * Aseguramos que el input del PasswordField ocupe
- * exactamente el mismo ancho que el correo.
- */
-
-.login-password-wrapper input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* ============================================================
-   ERRORES
-   ============================================================ */
-
-.field-error {
-  display: block;
-
-  margin-top: 6px;
-
-  color: #dc2626;
-
-  font-size: 12px;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-/* ============================================================
-   RECUPERACIÓN
-   ============================================================ */
-
+/* Enlace de recuperación */
 .login-recovery {
-  display: flex;
-  justify-content: flex-end;
-
-  margin-top: 8px;
+  text-align: right;
+  margin-bottom: 1.5rem;
 }
 
 .login-recovery-link {
-  color: #17315e;
-
-  font-size: 13px;
-  line-height: 1.4;
+  color: var(--color-primary);
+  font-size: 0.85rem;
   font-weight: 600;
-
   text-decoration: none;
-
-  transition: color 0.15s ease;
 }
 
 .login-recovery-link:hover {
-  color: #102548;
-
   text-decoration: underline;
 }
 
-.login-recovery-link:focus-visible {
-  outline: 2px solid rgba(23, 49, 94, 0.35);
-  outline-offset: 3px;
-  border-radius: 3px;
-}
-
-/* ============================================================
-   BOTÓN
-   ============================================================ */
-
+/* Botón de ingresar */
 .form-button {
   width: 100%;
-  height: 44px;
-
+  padding: 0.85rem;
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  gap: 9px;
-
-  margin-top: 24px;
-
-  padding: 0 16px;
-
-  box-sizing: border-box;
-
-  border: 0;
-  border-radius: 7px;
-
-  background: #17315e;
-  color: #ffffff;
-
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-
-  cursor: pointer;
-
+  gap: 8px;
   transition:
-    background-color 0.15s ease,
-    transform 0.1s ease,
-    opacity 0.15s ease;
+    background-color 0.2s,
+    transform 0.1s;
+  margin-top: 1rem;
 }
 
 .form-button:hover:not(:disabled) {
-  background: #102548;
+  background-color: var(--color-primary-hover);
 }
 
 .form-button:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.form-button:focus-visible {
-  outline: 2px solid rgba(23, 49, 94, 0.35);
-  outline-offset: 3px;
+  transform: scale(0.98);
 }
 
 .form-button:disabled {
+  background-color: var(--color-disabled);
   cursor: not-allowed;
-
-  opacity: 0.7;
 }
-
-/* ============================================================
-   SPINNER
-   ============================================================ */
 
 .login-button-spinner {
-  width: 15px;
-  height: 15px;
-
-  box-sizing: border-box;
-
-  border: 2px solid rgba(255, 255, 255, 0.35);
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #ffffff;
-
   border-radius: 50%;
-
-  animation: login-spinner 0.7s linear infinite;
+  animation: el-login-spin 0.6s linear infinite;
 }
 
-@keyframes login-spinner {
+@keyframes el-login-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
-
+/* Pie de la tarjeta */
 .login-footer {
-  margin-top: 30px;
-  padding-top: 18px;
-
-  border-top: 1px solid #eef2f7;
-
+  margin-top: 1.5rem;
   text-align: center;
-
-  color: #94a3b8;
-
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 0.75rem;
+  color: var(--color-text-sec);
 }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* Fase 5: se retiraron aquí las reglas .password-container/
+   .toggle-password — quedaron huérfanas desde que login.jsx migró a
+   PasswordField, que trae su propio control de mostrar/ocultar (ver
+   ui/PasswordField.css). Se verificó que ningún archivo actual las usa
+   antes de eliminarlas. */
 
-@media (max-width: 560px) {
-  .login-page {
-    padding: 20px;
-  }
-
-  .login-card {
-    padding: 34px 28px 24px;
-  }
+/* Mensaje de error debajo del input (¡Ahora usa tu paleta de colores!) */
+.field-error {
+  display: block;
+  color: var(--color-error);
+  font-size: 13px;
+  margin-top: 5px;
+  font-weight: 500;
 }

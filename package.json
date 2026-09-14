@@ -1,7 +1,7 @@
 {
   "name": "emotionlab-frontend",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -59,10 +59,6 @@
       "package.json"
     ],
     "extraResources": [
-      {
-        "from": "packaging/backend",
-        "to": "backend"
-      },
       {
         "from": "packaging/config",
         "to": "config"

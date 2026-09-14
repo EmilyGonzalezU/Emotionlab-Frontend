@@ -1,55 +1,72 @@
 /**
- * Lógica de estado de las solicitudes de reporte (PDF/Excel), sin
- * ningún endpoint ni dato inventado.
+ * Lógica de estado de las solicitudes de reporte.
  *
- * Nota histórica: esta primera versión de la Fase 4 intentaba adivinar
- * la URL de descarga buscando varios nombres de campo posibles
- * (download_url/file_url/...) directamente en el objeto de la
- * solicitud. Con acceso al backend real se confirmó que eso nunca
- * podía funcionar: no existe tal campo en la lista — la URL
- * presignada de S3 se obtiene bajo demanda llamando
- * GET /report-requests/:id/download (ver reportsApi.js
- * -> fetchReportDownloadUrl), válida solo 300 segundos. Por eso esa
- * búsqueda defensiva se retiró de aquí.
+ * El backend identifica cada solicitud mediante su report_request_id
+ * y session_id. La descarga del PDF se solicita posteriormente mediante
+ * GET /report-requests/:id/download.
+ *
+ * No se inventan estados ni URLs de descarga.
  */
+
+const PRIORIDAD_ESTADOS = [
+  "COMPLETED",
+  "APPROVED",
+  "PENDING",
+  "REJECTED",
+];
 
 /**
- * De todas las solicitudes de un tipo (PDF/EXCEL) para una sesión,
- * elige la más relevante para mostrar en el botón correspondiente:
- * una completada o aprobada se muestra antes que una pendiente, y una
- * pendiente antes que una rechazada. Si no hay ninguna solicitud de
- * ese tipo, devuelve null (todavía no se ha solicitado nada — nunca
- * se inventa un estado por defecto).
+ * Obtiene la solicitud más relevante para una sesión.
+ *
+ * El flujo actual maneja una solicitud de reporte por sesión, por lo que
+ * no se depende de motivo === PDF/EXCEL.
  */
-export function obtenerSolicitudRelevante(solicitudes, tipo) {
-  const deTipo = (solicitudes || []).filter((s) => (s.motivo || "").toUpperCase() === tipo);
-  if (deTipo.length === 0) return null;
+export function obtenerSolicitudRelevante(solicitudes) {
+  if (!Array.isArray(solicitudes) || solicitudes.length === 0) {
+    return null;
+  }
 
-  const porEstado = (estado) =>
-    deTipo.find((s) => String(s.status || "").toUpperCase() === estado);
+  for (const estado of PRIORIDAD_ESTADOS) {
+    const encontrada = solicitudes.find(
+      (solicitud) =>
+        String(solicitud?.status || "").toUpperCase() === estado
+    );
 
-  return (
-    porEstado("COMPLETED") ||
-    porEstado("APPROVED") ||
-    porEstado("PENDING") ||
-    porEstado("REJECTED") ||
-    deTipo[0]
-  );
+    if (encontrada) {
+      return encontrada;
+    }
+  }
+
+  // Si existe una solicitud pero tiene un estado que todavía no conocemos,
+  // devolvemos la solicitud real sin inventar un estado.
+  return solicitudes[0] || null;
 }
 
 /**
- * Etiqueta del botón de solicitud/descarga, con el vocabulario exacto
- * pedido: "Solicitar reporte" / "Solicitud pendiente" / "Reporte
- * aprobado" / "Descargar reporte" / "Solicitud rechazada". No se
- * inventa un sexto estado.
+ * Etiqueta del botón de solicitud/descarga.
  */
 export function obtenerEtiquetaSolicitud(solicitud) {
-  if (!solicitud) return "Solicitar reporte";
+  if (!solicitud) {
+    return "Solicitar reporte";
+  }
 
   const estado = String(solicitud.status || "").toUpperCase();
-  if (estado === "PENDING") return "Solicitud pendiente";
-  if (estado === "APPROVED") return "Reporte aprobado";
-  if (estado === "COMPLETED") return "Descargar reporte";
-  if (estado === "REJECTED") return "Solicitud rechazada";
+
+  if (estado === "PENDING") {
+    return "Solicitud pendiente";
+  }
+
+  if (estado === "APPROVED") {
+    return "Reporte aprobado";
+  }
+
+  if (estado === "COMPLETED") {
+    return "Descargar reporte";
+  }
+
+  if (estado === "REJECTED") {
+    return "Solicitud rechazada";
+  }
+
   return "Solicitar reporte";
 }
