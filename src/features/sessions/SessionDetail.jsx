@@ -2,9 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FiArrowLeft,
-  FiEdit2,
-  FiCheck,
-  FiX,
   FiFileText,
   FiClock,
   FiCheckCircle,
@@ -12,6 +9,7 @@ import {
   FiUser,
   FiDownload,
   FiRefreshCw,
+  FiAlertTriangle,
 } from "react-icons/fi";
 
 import PageHeader from "../../ui/PageHeader.jsx";
@@ -23,10 +21,7 @@ import { SkeletonRows } from "../../ui/LoadingState.jsx";
 
 import { api } from "../../lib/apiClient.js";
 
-import {
-  useSessionDetail,
-  useUpdateStudentName,
-} from "./useSessions.js";
+import { useSessionDetail } from "./useSessions.js";
 
 import {
   interpretarResultadoIA,
@@ -74,7 +69,6 @@ export default function SessionDetail() {
     refetch: refetchSolicitudes,
   } = useMyReportRequests();
 
-  const actualizarNombre = useUpdateStudentName(id);
   const crearSolicitud = useCreateReportRequest();
   const pedirUrlDescarga = useReportDownloadUrl();
 
@@ -82,9 +76,7 @@ export default function SessionDetail() {
   // ESTADOS DE UI
   // =========================================================
 
-  const [editandoNombre, setEditandoNombre] = useState(false);
-  const [nuevoNombre, setNuevoNombre] = useState("");
-  const [errorNombre, setErrorNombre] = useState("");
+  const [refrescando, setRefrescando] = useState(false);
 
   const [aviso, setAviso] = useState(null);
 
@@ -265,73 +257,16 @@ export default function SessionDetail() {
   ]);
 
   // =========================================================
-  // EDITAR NOMBRE
+  // ACTUALIZAR MANUALMENTE (BOTÓN REFRESCAR)
   // =========================================================
 
-  const abrirEdicionNombre = () => {
-    setNuevoNombre(
-      nombreAlumno !== "Sin especificar"
-        ? nombreAlumno
-        : ""
-    );
-
-    setErrorNombre("");
-    setEditandoNombre(true);
-  };
-
-  const cancelarEdicionNombre = () => {
-    setEditandoNombre(false);
-    setErrorNombre("");
-  };
-
-  const cambiarNuevoNombre = (e) => {
-    const val = e.target.value;
-
-    if (val.length > 25) {
-      setErrorNombre(
-        "El nombre no puede superar los 25 caracteres."
-      );
-      return;
+  const handleRefrescar = async () => {
+    setRefrescando(true);
+    try {
+      await Promise.all([refetchSesion(), refetchSolicitudes()]);
+    } finally {
+      setRefrescando(false);
     }
-
-    if (
-      !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]*$/.test(
-        val
-      )
-    ) {
-      setErrorNombre(
-        "No se permiten caracteres especiales."
-      );
-      return;
-    }
-
-    setErrorNombre("");
-    setNuevoNombre(val);
-  };
-
-  const guardarNombre = (e) => {
-    e.preventDefault();
-
-    if (!nuevoNombre.trim()) {
-      setErrorNombre(
-        "El nombre no puede estar vacío."
-      );
-      return;
-    }
-
-    actualizarNombre.mutate(
-      nuevoNombre.trim(),
-      {
-        onSuccess: () =>
-          setEditandoNombre(false),
-
-        onError: (error) =>
-          setErrorNombre(
-            error?.message ||
-              "No se pudo actualizar el nombre del alumno."
-          ),
-      }
-    );
   };
 
   // =========================================================
@@ -557,6 +492,61 @@ export default function SessionDetail() {
   // REPORTE
   // =========================================================
 
+  const formatearFechaSiExiste = (iso) => {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleDateString("es-CL", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  const volverADescargarReporte = (idSolicitud) => {
+    if (!idSolicitud) {
+      setAviso({
+        mensaje:
+          "No se encontró un identificador válido para descargar el reporte.",
+        tipo: "pendiente",
+      });
+      return;
+    }
+
+    pedirUrlDescarga.mutate(idSolicitud, {
+      onSuccess: (data) => {
+        const url = data?.download_url || data?.url;
+        if (!url) {
+          setAviso({
+            mensaje:
+              "El reporte fue generado, pero el servidor no devolvió un enlace de descarga válido.",
+            tipo: "pendiente",
+          });
+          return;
+        }
+        window.open(url, "_blank", "noopener,noreferrer");
+        setAviso(null);
+      },
+      onError: (error) => {
+        setAviso({
+          mensaje:
+            error?.message ||
+            "No se pudo obtener el enlace de descarga del reporte.",
+          tipo: "pendiente",
+        });
+      },
+    });
+  };
+
+  const volverASolicitarReporte = () => {
+    setAviso(null);
+    setFormatoAConfirmar("pdf");
+  };
+
   const handleAccionReporte = () => {
     setAviso(null);
 
@@ -618,6 +608,25 @@ export default function SessionDetail() {
           mensaje:
             "El reporte está completado, pero no se encontró un identificador válido para descargarlo.",
           tipo: "pendiente",
+        });
+
+        return;
+      }
+
+      // Si ya fue descargado (downloaded_at existe), mostramos
+      // el aviso con DOS opciones: volver a descargar o
+      // volver a solicitar.
+      if (solicitud.downloaded_at) {
+        const fechaDescarga =
+          formatearFechaSiExiste(solicitud.downloaded_at);
+
+        setAviso({
+          mensaje: fechaDescarga
+            ? `El reporte ya fue generado y descargado el ${fechaDescarga}. ¿Qué deseas hacer?`
+            : "El reporte ya fue generado y descargado anteriormente. ¿Qué deseas hacer?",
+          tipo: "ok",
+          esReporteDescargado: true,
+          idSolicitudDescarga: idSolicitud,
         });
 
         return;
@@ -805,21 +814,32 @@ export default function SessionDetail() {
       <PageHeader
         title="Detalle de la sesión"
         actions={
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={FiFileText}
-            onClick={handleAccionReporte}
-            disabled={
-              crearSolicitud.isPending ||
-              pedirUrlDescarga.isPending
-            }
-            title={etiquetaSolicitud}
-          >
-            {pedirUrlDescarga.isPending
-              ? "Preparando descarga..."
-              : etiquetaSolicitud}
-          </Button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={FiRefreshCw}
+              onClick={handleRefrescar}
+              loading={refrescando || isLoading}
+            >
+              Actualizar
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={FiFileText}
+              onClick={handleAccionReporte}
+              disabled={
+                crearSolicitud.isPending ||
+                pedirUrlDescarga.isPending
+              }
+              title={etiquetaSolicitud}
+            >
+              {pedirUrlDescarga.isPending
+                ? "Preparando descarga..."
+                : etiquetaSolicitud}
+            </Button>
+          </div>
         }
       />
 
@@ -851,75 +871,11 @@ export default function SessionDetail() {
                   Nombre del alumno
                 </span>
 
-                {!editandoNombre && (
-                  <button
-                    type="button"
-                    className="el-session-detail-edit-btn"
-                    onClick={
-                      abrirEdicionNombre
-                    }
-                    title="Editar nombre del alumno"
-                    aria-label="Editar nombre del alumno"
-                  >
-                    <FiEdit2 />
-                  </button>
-                )}
-
               </div>
 
-              {!editandoNombre ? (
-                <span className="el-session-detail-fact-value">
-                  {nombreAlumno}
-                </span>
-              ) : (
-                <form
-                  onSubmit={
-                    guardarNombre
-                  }
-                  className="el-session-detail-edit-form"
-                >
-
-                  <input
-                    type="text"
-                    value={nuevoNombre}
-                    onChange={
-                      cambiarNuevoNombre
-                    }
-                    className="el-session-detail-edit-input"
-                    placeholder="Nombre del alumno"
-                    autoFocus
-                  />
-
-                  <button
-                    type="submit"
-                    className="el-session-detail-edit-confirm"
-                    disabled={
-                      actualizarNombre.isPending
-                    }
-                    aria-label="Guardar nombre"
-                  >
-                    <FiCheck />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="el-session-detail-edit-cancel"
-                    onClick={
-                      cancelarEdicionNombre
-                    }
-                    aria-label="Cancelar edición"
-                  >
-                    <FiX />
-                  </button>
-
-                </form>
-              )}
-
-              {errorNombre && (
-                <span className="el-session-detail-fact-error">
-                  {errorNombre}
-                </span>
-              )}
+              <span className="el-session-detail-fact-value">
+                {nombreAlumno}
+              </span>
 
             </div>
 
@@ -1375,13 +1331,39 @@ export default function SessionDetail() {
         onClose={() => setAviso(null)}
         title="Aviso"
         footer={
-          <Button
-            onClick={() =>
-              setAviso(null)
-            }
-          >
-            Entendido
-          </Button>
+          aviso?.esReporteDescargado ? (
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  volverADescargarReporte(aviso?.idSolicitudDescarga)
+                }
+                loading={pedirUrlDescarga.isPending}
+              >
+                Volver a descargar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={volverASolicitarReporte}
+              >
+                Volver a solicitar
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() =>
+                setAviso(null)
+              }
+            >
+              Entendido
+            </Button>
+          )
         }
       >
 

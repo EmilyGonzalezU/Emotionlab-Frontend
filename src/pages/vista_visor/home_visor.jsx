@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { FiRefreshCw } from "react-icons/fi";
 import { getApiUrl } from "../../config/api.js";
 import PageHeader from "../../ui/PageHeader.jsx";
+import Button from "../../ui/Button.jsx";
 
 const VALORES_ALTO_BIENESTAR = new Set(["sí", "si", "true", "1", "alto bienestar", "alto"]);
 
@@ -19,13 +21,17 @@ export default function HomeEspecialista() {
     datosBienestar: [],
     sesionesPorDia: [],
   });
+  const [refrescando, setRefrescando] = useState(false);
 
   // ==========================================================
   // OBTENER SESIONES
   // ==========================================================
-  const obtenerDatos = useCallback(async () => {
+  const obtenerDatos = useCallback(async (mostrarLoading = true) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
+    if (mostrarLoading) {
+      setRefrescando(true);
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -168,6 +174,7 @@ export default function HomeEspecialista() {
       setEstado((anterior) => ({ ...anterior, cargando: false }));
     } finally {
       fetchingRef.current = false;
+      setRefrescando(false);
     }
   }, []);
 
@@ -177,8 +184,12 @@ export default function HomeEspecialista() {
   useEffect(() => {
     if (mountedRef.current) return;
     mountedRef.current = true;
-    obtenerDatos();
+    obtenerDatos(false);
   }, [obtenerDatos]);
+
+  const handleRefrescar = () => {
+    obtenerDatos(true);
+  };
 
   // ==========================================================
   // IR AL DETALLE DE UN DÍA
@@ -195,6 +206,17 @@ export default function HomeEspecialista() {
       <PageHeader
         title="Panel del especialista"
         description="Resumen general de bienestar y agrupaciones de sesiones por fecha."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={FiRefreshCw}
+            onClick={handleRefrescar}
+            loading={refrescando || estado.cargando}
+          >
+            Actualizar
+          </Button>
+        }
       />
 
       <div className="dashboard-layout">

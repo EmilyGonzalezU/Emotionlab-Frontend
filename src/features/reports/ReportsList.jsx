@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { FiInbox, FiSearch } from "react-icons/fi";
+import { FiInbox, FiSearch, FiRefreshCw } from "react-icons/fi";
 import PageHeader from "../../ui/PageHeader.jsx";
 import Button from "../../ui/Button.jsx";
 import EmptyState from "../../ui/EmptyState.jsx";
 import { SkeletonRows } from "../../ui/LoadingState.jsx";
 import ReportStatusBadge from "./ReportStatusBadge.jsx";
 import ReportReview from "./ReportReview.jsx";
-import { usePendingReportRequests, useUsersDirectory } from "./useReports.js";
+import { usePendingReportRequests, useUsersDirectory, useMyReportRequests } from "./useReports.js";
 import "./ReportsList.css";
 
 function construirMapaUsuarios(usuarios) {
@@ -16,6 +16,18 @@ function construirMapaUsuarios(usuarios) {
     if (usr.email && usr.nombre) mapa[usr.email.toLowerCase()] = usr.nombre;
   });
   return mapa;
+}
+
+function fechaPrioridad(s) {
+  if (!s) return "";
+  return (
+    s.updated_at ||
+    s.reviewed_at ||
+    s.requested_at ||
+    s.downloaded_at ||
+    s.created_at ||
+    ""
+  );
 }
 
 // Extraído literalmente de la lógica ya validada en
@@ -50,13 +62,34 @@ function obtenerNombreEspecialista(solicitud, mapaUsuarios) {
  * ✅/❌ de las acciones.
  */
 export default function ReportsList() {
-  const { data, isLoading, isError } = usePendingReportRequests();
+  const { data, isLoading, isError, refetch: refetchPending } = usePendingReportRequests();
+  const { refetch: refetchMine } = useMyReportRequests();
   const { data: usuariosData } = useUsersDirectory();
   const [busqueda, setBusqueda] = useState("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [refrescando, setRefrescando] = useState(false);
+
+  const handleRefrescar = async () => {
+    setRefrescando(true);
+    try {
+      await Promise.all([refetchPending(), refetchMine()]);
+    } finally {
+      setRefrescando(false);
+    }
+  };
 
   const mapaUsuarios = useMemo(() => construirMapaUsuarios(usuariosData), [usuariosData]);
-  const solicitudes = data?.items || [];
+  const solicitudes = useMemo(() => {
+    const raw = data?.items || [];
+    return [...raw].sort((a, b) => {
+      const fa = fechaPrioridad(a);
+      const fb = fechaPrioridad(b);
+      if (!fa && !fb) return 0;
+      if (!fa) return 1;
+      if (!fb) return -1;
+      return new Date(fb).getTime() - new Date(fa).getTime();
+    });
+  }, [data]);
 
   const solicitudesFiltradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -77,6 +110,17 @@ export default function ReportsList() {
       <PageHeader
         title="Solicitudes de reportes"
         description="Revisa el contexto de cada sesión y valida las solicitudes de reportes enviadas por los especialistas."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={FiRefreshCw}
+            onClick={handleRefrescar}
+            loading={refrescando || isLoading}
+          >
+            Actualizar
+          </Button>
+        }
       />
 
       <div className="el-reports-search">

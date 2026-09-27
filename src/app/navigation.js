@@ -19,6 +19,7 @@ export const NAV_BY_ROLE = {
   teacher: [
     { to: "/teacher", label: "Inicio", end: true, icon: FiHome },
     { to: "/teacher/sesiones", label: "Sesiones", icon: FiClipboard },
+    { to: "/teacher/solicitudes", label: "Solicitudes", icon: FiFileText },
     { to: "/teacher/cuenta", label: "Cuenta", icon: FiUser },
   ],
 };

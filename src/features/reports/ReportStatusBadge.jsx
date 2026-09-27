@@ -12,12 +12,19 @@ const ESTADOS = {
 
 /**
  * Traduce el estado real de una solicitud de reporte (PENDING/
- * APPROVED/REJECTED/COMPLETED) a un Badge consistente. Si el backend
- * alguna vez entrega un estado distinto de estos cuatro, se muestra
- * tal cual en vez de forzarlo a uno de los conocidos.
+ * APPROVED/REJECTED/COMPLETED) a un Badge consistente.
+ *
+ * "error" NO se trata como un estado válido de solicitud — se muestra
+ * con tono danger y etiqueta explícita. Cualquier otro estado
+ * desconocido se muestra tal cual en tono neutral sin ocultarlo.
  */
 export default function ReportStatusBadge({ status }) {
   const clave = status ? String(status).toUpperCase() : null;
+
+  if (clave === "ERROR") {
+    return <Badge tone="danger">Error en la solicitud</Badge>;
+  }
+
   const info = clave ? ESTADOS[clave] : null;
 
   if (!info) {

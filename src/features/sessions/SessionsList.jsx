@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FiDownload, FiSearch, FiChevronLeft, FiChevronRight, FiInbox } from "react-icons/fi";
+import { FiDownload, FiSearch, FiChevronLeft, FiChevronRight, FiInbox, FiRefreshCw } from "react-icons/fi";
 import PageHeader from "../../ui/PageHeader.jsx";
 import Button from "../../ui/Button.jsx";
 import EmptyState from "../../ui/EmptyState.jsx";
 import { SkeletonRows } from "../../ui/LoadingState.jsx";
 import { useSessions, useImportSessions } from "./useSessions.js";
+import { useMyReportRequests } from "../reports/useReports.js";
 import { normalizarGenero, procesarSesionRaw } from "./sessionListHelpers.js";
 import SessionsFilters from "./SessionsFilters.jsx";
 import SessionSearchModal from "./SessionSearchModal.jsx";
@@ -26,7 +27,8 @@ export default function SessionsList() {
   const [searchParams] = useSearchParams();
   const fechaFiltroUrl = searchParams.get("fecha");
 
-  const { data, isLoading, isError } = useSessions();
+  const { data, isLoading, isError, refetch: refetchSessions } = useSessions();
+  const { refetch: refetchMyRequests } = useMyReportRequests();
   const importMutation = useImportSessions();
 
   const [filtroGenero, setFiltroGenero] = useState("");
@@ -36,6 +38,16 @@ export default function SessionsList() {
   const [busquedaAbierta, setBusquedaAbierta] = useState(false);
   const [busquedaId, setBusquedaId] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [refrescando, setRefrescando] = useState(false);
+
+  const handleRefrescar = async () => {
+    setRefrescando(true);
+    try {
+      await Promise.all([refetchSessions(), refetchMyRequests()]);
+    } finally {
+      setRefrescando(false);
+    }
+  };
 
   const sesionesProcesadas = useMemo(() => {
     if (!data) return [];
@@ -149,6 +161,15 @@ export default function SessionsList() {
         description="Historial de sesiones registradas en EmotionLab."
         actions={
           <div className="el-sessions-list-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={FiRefreshCw}
+              onClick={handleRefrescar}
+              loading={refrescando || isLoading}
+            >
+              Actualizar
+            </Button>
             <Button
               variant="secondary"
               size="sm"

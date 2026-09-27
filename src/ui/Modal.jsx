@@ -18,16 +18,32 @@ export default function Modal({
   size = "md",
 }) {
   const dialogRef = useRef(null);
+  const yaAplicoFocoInicial = useRef(false);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      yaAplicoFocoInicial.current = false;
+      return undefined;
+    }
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") onClose?.();
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    dialogRef.current?.focus();
+
+    // Aplicar foco inicial SOLAMENTE UNA VEZ cuando el modal se
+    // abre. Si se vuelve a ejecutar este effect porque cambiaron
+    // onClose / props del children (por ejemplo al escribir en un
+    // textarea dentro del modal), NO se roba el foco del input.
+    if (
+      !yaAplicoFocoInicial.current &&
+      document.activeElement &&
+      !dialogRef.current?.contains(document.activeElement)
+    ) {
+      dialogRef.current?.focus();
+      yaAplicoFocoInicial.current = true;
+    }
 
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);

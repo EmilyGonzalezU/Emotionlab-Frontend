@@ -25,6 +25,7 @@ import HomeEspecialista from "./pages/vista_visor/home_visor.jsx";
 import CuentaEspecialista from "./pages/vista_visor/cuenta_visor.jsx";
 import SesionesEspecialista from "./pages/vista_visor/sesiones_visor.jsx";
 import SesionDetalle from "./pages/vista_visor/sesion_detalle.jsx";
+import SolicitudesEspecialista from "./pages/vista_visor/solicitudes_visor.jsx";
 
 function App() {
   /*
@@ -167,6 +168,11 @@ function App() {
             />
 
             <Route
+              path="solicitudes"
+              element={<SolicitudesEspecialista />}
+            />
+
+            <Route
               path="cuenta"
               element={<CuentaEspecialista />}
             />
@@ -197,6 +203,11 @@ function App() {
             <Route
               path="sesiones/:id"
               element={<SesionDetalle />}
+            />
+
+            <Route
+              path="solicitudes"
+              element={<SolicitudesEspecialista />}
             />
 
             <Route
