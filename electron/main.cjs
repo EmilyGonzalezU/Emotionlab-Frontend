@@ -46,13 +46,22 @@ async function createWindow() {
    * Desarrollo:
    * se mantienen localhost y Vite para poder trabajar localmente.
    */
+  const apiConfigPath = path.join(__dirname, "..", "dist", "api-config.json");
+  let apiOrigin = "";
+  if (fs.existsSync(apiConfigPath)) {
+    apiOrigin = JSON.parse(fs.readFileSync(apiConfigPath, "utf8")).apiOrigin || "";
+  } else if (app.isPackaged) {
+    throw new Error("Falta dist/api-config.json. Compile con VITE_API_URL configurada.");
+  }
+
+  const apiSources = ["'self'", apiOrigin, ...(!app.isPackaged ? ["http://localhost:5000", "http://127.0.0.1:5000", "ws://localhost:5173", "ws://127.0.0.1:5173"] : [])].filter(Boolean).join(" ");
   const csp = [
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' https://6gn9nnvbhc.execute-api.us-east-1.amazonaws.com http://localhost:5000 http://127.0.0.1:5000 ws://localhost:5173 ws://127.0.0.1:5173",
+    `connect-src ${apiSources}`,
     "media-src 'self'",
     "object-src 'none'",
     "frame-src 'none'",

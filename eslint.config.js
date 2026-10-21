@@ -11,6 +11,8 @@ export default [
       'release/**',
       'node_modules/**',
       '.vite/**',
+      '.kilo/**',
+      'Claude outputs/**',
       '.vscode/**',
       '.idea/**',
       // Archivos empaquetados de PyInstaller — binarios de terceros, no código de la app.

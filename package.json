@@ -6,6 +6,8 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
+    "configure:api": "node scripts/configure-api-from-terraform.mjs",
+    "prebuild": "node scripts/validate-api-url.mjs",
     "build": "vite build",
     "electron": "electron .",
     "electron:build": "npm run build && electron .",
@@ -47,22 +49,10 @@
     "directories": {
       "output": "release"
     },
-    "publish": {
-      "provider": "github",
-      "owner": "EmilyGonzalezU",
-      "repo": "EmotionLab-Frontend",
-      "releaseType": "release"
-    },
     "files": [
       "electron/**/*",
       "dist/**/*",
       "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "packaging/config",
-        "to": "config"
-      }
     ],
     "win": {
       "target": [

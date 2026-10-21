@@ -24,7 +24,6 @@ import { api } from "../../lib/apiClient.js";
 import { useSessionDetail } from "./useSessions.js";
 
 import {
-  interpretarResultadoIA,
   AVISO_IA,
 } from "./predictionHelpers.js";
 
@@ -467,9 +466,6 @@ export default function SessionDetail() {
   // RESULTADO IA
   // =========================================================
 
-  const resultadoIA =
-    interpretarResultadoIA(sesionData);
-
   /*
    * Protección adicional:
    *
@@ -477,16 +473,6 @@ export default function SessionDetail() {
    * extraemos bienestar para que React nunca
    * intente renderizar directamente el objeto.
    */
-
-  const resultadoIASeguro =
-    typeof resultadoIA?.resultado ===
-      "object" &&
-    resultadoIA?.resultado !== null
-      ? resultadoIA.resultado.bienestar ||
-        resultadoIA.resultado.prediccion ||
-        "Sin resultado"
-      : resultadoIA?.resultado ||
-        "Sin resultado";
 
   // =========================================================
   // REPORTE
