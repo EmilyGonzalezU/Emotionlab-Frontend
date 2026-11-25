@@ -11,5 +11,8 @@ export const API_BASE_URL = configuredApiUrl;
 
 export function getApiUrl(path = "") {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (globalThis.window?.electronAPI?.isElectron === true) {
+    return `emotionlab://bundle/api${cleanPath}`;
+  }
   return `${API_BASE_URL}${cleanPath}`;
 }

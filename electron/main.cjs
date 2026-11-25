@@ -18,6 +18,20 @@ const {
 
 let mainWindow = null;
 
+function readApiOrigin() {
+  const apiConfigPath = path.join(__dirname, "..", "dist", "api-config.json");
+  if (!fs.existsSync(apiConfigPath)) {
+    if (app.isPackaged) throw new Error("Falta dist/api-config.json. Compile con VITE_API_URL configurada.");
+    return "";
+  }
+  const configured = JSON.parse(fs.readFileSync(apiConfigPath, "utf8")).apiOrigin || "";
+  const parsed = new URL(configured);
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+    throw new Error("VITE_API_URL debe ser un origen HTTPS válido.");
+  }
+  return parsed.origin;
+}
+
 /**
  * Crea la ventana principal de EmotionLab.
  */
@@ -85,14 +99,7 @@ async function createWindow() {
    * se mantienen localhost y Vite para poder trabajar localmente.
    */
   const apiConfigPath = path.join(__dirname, "..", "dist", "api-config.json");
-  let apiOrigin = "";
-  if (fs.existsSync(apiConfigPath)) {
-    apiOrigin = JSON.parse(fs.readFileSync(apiConfigPath, "utf8")).apiOrigin || "";
-  } else if (app.isPackaged) {
-    throw new Error("Falta dist/api-config.json. Compile con VITE_API_URL configurada.");
-  }
-
-  const apiSources = ["'self'", apiOrigin, ...(!app.isPackaged ? ["http://localhost:5000", "http://127.0.0.1:5000", "ws://localhost:5173", "ws://127.0.0.1:5173"] : [])].filter(Boolean).join(" ");
+  const apiSources = ["'self'", ...(!app.isPackaged ? ["ws://localhost:5173", "ws://127.0.0.1:5173"] : [])].join(" ");
   const csp = [
     "default-src 'self'",
     "script-src 'self'",
@@ -274,10 +281,11 @@ if (!gotSingleInstanceLock) {
       );
     }
 
+    const apiOrigin = readApiOrigin();
     protocol.handle("emotionlab", async (request) => {
       const requested = new URL(request.url);
       if (requested.hostname !== "bundle" || !["GET", "HEAD"].includes(request.method)) {
-        return new Response("Not found", { status: 404 });
+        if (requested.hostname !== "bundle") return new Response("Not found", { status: 404 });
       }
       let pathname;
       try {
@@ -290,6 +298,43 @@ if (!gotSingleInstanceLock) {
       if (relative.startsWith("..") || path.isAbsolute(relative)) {
         return new Response("Forbidden", { status: 403 });
       }
+      if (pathname.startsWith("/api/")) {
+        if (!apiOrigin || !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+          return new Response("Method or API origin not allowed", { status: 405 });
+        }
+        const apiPath = `${pathname.slice(4)}${requested.search}`;
+        const upstreamUrl = new URL(apiPath, apiOrigin);
+        if (upstreamUrl.origin !== apiOrigin) return new Response("Forbidden", { status: 403 });
+        const headers = new Headers();
+        for (const name of ["accept", "authorization", "content-type"]) {
+          const value = request.headers.get(name);
+          if (value) headers.set(name, value);
+        }
+        try {
+          const body = ["GET", "HEAD"].includes(request.method) ? undefined : await request.arrayBuffer();
+          const upstream = await fetch(upstreamUrl, {
+            method: request.method,
+            headers,
+            body,
+            redirect: "manual",
+            signal: AbortSignal.timeout(30000),
+          });
+          const responseHeaders = new Headers();
+          for (const name of ["cache-control", "content-disposition", "content-type", "retry-after", "x-request-id"]) {
+            const value = upstream.headers.get(name);
+            if (value) responseHeaders.set(name, value);
+          }
+          const noBody = [204, 205, 304].includes(upstream.status) || request.method === "HEAD";
+          return new Response(noBody ? null : upstream.body, { status: upstream.status, headers: responseHeaders });
+        } catch (error) {
+          console.warn("La solicitud al API no pudo completarse:", error.message);
+          return new Response(JSON.stringify({ error: "No se pudo conectar con el servidor." }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+      if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       try {
         return await net.fetch(pathToFileURL(target).toString());
       } catch {
