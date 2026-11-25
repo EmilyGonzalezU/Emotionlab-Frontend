@@ -1,7 +1,7 @@
 import React from "react";
 import "./Badge.css";
 
-const TONES = ["success", "warning", "danger", "neutral", "brand"];
+const TONES = ["success", "warning", "danger", "info", "neutral", "brand"];
 
 /**
  * Indicador de estado. Reemplaza los `badge-estado` / `badge-rol` con

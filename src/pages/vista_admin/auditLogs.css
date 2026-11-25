@@ -1,0 +1,36 @@
+.el-audit-page { display: flex; min-width: 0; flex-direction: column; gap: var(--space-4); }
+.el-audit-tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.el-audit-card { min-width: 0; padding: var(--space-5); border: 1px solid var(--color-line); border-radius: var(--surface-radius); background: var(--color-surface); box-shadow: var(--surface-shadow); }
+.el-audit-table-scroll { width: 100%; overflow-x: auto; }
+.el-audit-page .el-audit-table { min-width: 760px; }
+.el-audit-table th:first-child { width: 22%; }
+.el-audit-table th:nth-child(2) { width: 28%; }
+.el-audit-table th:last-child { width: 50%; }
+.el-audit-date { color: var(--color-ink-soft); font-size: var(--text-sm); white-space: nowrap; }
+.el-audit-actor { min-width: 0; color: var(--color-ink); font-size: var(--text-sm); overflow-wrap: anywhere; }
+.el-audit-action-cell { min-width: 0; }
+.el-audit-action-group { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: var(--space-1); }
+.el-audit-action-group .el-badge { white-space: normal; }
+.el-audit-secondary, .el-audit-reason { max-width: 100%; color: var(--color-ink-soft); font-size: var(--text-xs); line-height: var(--leading-normal); overflow-wrap: anywhere; }
+.el-audit-reason { color: var(--color-danger-strong); }
+.el-audit-table tr.is-failed td:first-child { border-left: 3px solid var(--color-danger); }
+.el-audit-card > [role="alert"] { border-radius: var(--surface-radius); background: var(--color-danger-bg); }
+
+@media (max-width: 760px) {
+  .el-audit-card { padding: var(--space-4); }
+  .el-audit-page .el-audit-table,
+  .el-audit-page .el-audit-table tbody { display: block; width: 100%; min-width: 0; }
+  .el-audit-page .el-audit-table thead { display: none; }
+  .el-audit-page .el-audit-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr); margin-bottom: var(--space-3); padding: 6px 14px; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-surface); }
+  .el-audit-page .el-audit-table tbody tr:last-child { margin-bottom: 0; }
+  .el-audit-page .el-audit-table tbody td { display: grid; grid-template-columns: minmax(112px, 30%) minmax(0, 1fr); align-items: start; gap: var(--space-3); padding: 10px 0; border-bottom: 1px solid var(--color-line-soft); }
+  .el-audit-page .el-audit-table tbody td::before { content: attr(data-label); color: var(--color-ink-faint); font-size: var(--text-xs); font-weight: 700; }
+  .el-audit-page .el-audit-table tbody td:last-child { border-bottom: 0; }
+  .el-audit-date { white-space: normal; }
+}
+
+@media (max-width: 480px) {
+  .el-audit-card { padding: 10px; }
+  .el-audit-page .el-audit-table tbody tr { padding-inline: 10px; }
+  .el-audit-page .el-audit-table tbody td { grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-2); }
+}

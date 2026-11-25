@@ -87,6 +87,19 @@ function textosConfirmacion(accion) {
   return null;
 }
 
+function formatearUltimaSesion(valor) {
+  if (!valor) return "Sin registro";
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return "Sin registro";
+  return fecha.toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /**
  * Reemplaza pages/vista_admin/visualizadores_admin.jsx (Fase 5).
  *
@@ -127,7 +140,7 @@ export default function UsersList() {
   const eliminar = useDeleteUser();
 
   const miUid = useMemo(obtenerMiUid, []);
-  const usuarios = data || [];
+  const usuarios = useMemo(() => data || [], [data]);
 
   const usuariosFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -205,7 +218,7 @@ export default function UsersList() {
 
       <section className="el-users-table-card">
         {isLoading ? (
-          <SkeletonRows rows={5} columns={5} />
+          <SkeletonRows rows={5} columns={6} />
         ) : isError ? (
           <EmptyState
             title="No se pudo obtener la lista de usuarios"
@@ -223,13 +236,14 @@ export default function UsersList() {
           />
         ) : (
           <div className="el-users-table-scroll">
-            <table className="el-users-table">
+            <table className="el-table el-users-table">
               <thead>
                 <tr>
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>Rol</th>
                   <th>Estado</th>
+                  <th>Última sesión</th>
                   <th className="el-users-table-col-actions">Acciones</th>
                 </tr>
               </thead>
@@ -246,6 +260,7 @@ export default function UsersList() {
                       <td>
                         <UserStatusBadge activo={usuario.activo} />
                       </td>
+                      <td>{formatearUltimaSesion(usuario.ultimo_login)}</td>
                       <td className="el-users-table-col-actions">
                         <div className="el-users-table-actions">
                           <Button

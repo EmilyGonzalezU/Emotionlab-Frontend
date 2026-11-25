@@ -1,97 +1,62 @@
 import React, { useEffect, useState } from "react";
-import { FiAlertTriangle, FiInfo } from "react-icons/fi";
+import { FiInfo } from "react-icons/fi";
 import Modal from "../../ui/Modal.jsx";
 import Button from "../../ui/Button.jsx";
 import ConfirmationDialog from "../../ui/ConfirmationDialog.jsx";
-import { SkeletonRows } from "../../ui/LoadingState.jsx";
 import ReportStatusBadge from "./ReportStatusBadge.jsx";
-import AiResultCard from "../sessions/AiResultCard.jsx";
-import { useReviewReportRequest, useSessionContextForAdmin } from "./useReports.js";
+import { formatChileInstant } from "../sessions/sessionDisplay.js";
+import { useReviewReportRequest, useUsersDirectory } from "./useReports.js";
 import "./ReportReview.css";
 
-// Nunca se muestra un dato inventado: si el campo no viene del
-// backend, se dice explícitamente que no está disponible.
-function mostrar(valor) {
-  if (valor === null || valor === undefined || valor === "") return "No disponible";
-  return valor;
+function mostrar(value) {
+  return value === null || value === undefined || value === ""
+    ? "No disponible"
+    : value;
 }
 
-/**
- * Panel de revisión de una solicitud de reporte para el administrador.
- *
- * Muestra el contexto real de la sesión (reutilizando GET
- * /sessions/:id, el mismo endpoint que ya usa el especialista) y deja
- * aprobar/rechazar mediante PATCH /report-requests/:id/review, con
- * confirmación explícita en ambos casos. Nunca simula un estado
- * COMPLETED: tras aprobar o rechazar, se cierra y la lista de
- * pendientes (que ya invalida React Query) refleja el estado real que
- * devuelva el backend.
- */
-export default function ReportReview({ solicitud, nombreEspecialista, onClose }) {
-  const open = Boolean(solicitud);
-  const sessionId = solicitud?.session_id;
-
-  const { data: contexto, isLoading: cargandoContexto } = useSessionContextForAdmin(sessionId);
-  const revisar = useReviewReportRequest();
-
-  const [accion, setAccion] = useState(null); // "approve" | "reject" | null
+/** Admin report review deliberately contains request metadata only. */
+export default function ReportReview({ solicitud, onClose }) {
+  const [accion, setAccion] = useState(null);
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [errorAccion, setErrorAccion] = useState("");
+  const revisar = useReviewReportRequest();
+  const { data: usersData } = useUsersDirectory();
 
   useEffect(() => {
-    if (!open) {
+    if (!solicitud) {
       setAccion(null);
       setMotivoRechazo("");
       setErrorAccion("");
     }
-  }, [open]);
+  }, [solicitud]);
 
   if (!solicitud) return null;
 
-  const idUnico = solicitud.request_id || solicitud.id;
+  const id = solicitud.request_id || solicitud.report_request_id || solicitud.id;
+  const pendiente = String(solicitud.status || "").toUpperCase() === "PENDING";
   const fechaSolicitud = solicitud.created_at
-    ? new Date(solicitud.created_at).toLocaleString("es-CL")
+    ? formatChileInstant(solicitud.created_at)
     : "No disponible";
+  const users = Array.isArray(usersData) ? usersData : usersData?.items || [];
+  const requester = users.find((user) => String(user.uid || user.user_id || user.id || "") === String(solicitud.requester_uid || ""));
+  const requesterName = requester?.nombre || requester?.name || solicitud.requester_uid || "el especialista solicitante";
+  const esSeguimiento = solicitud.report_type === "TRACKING";
+  const recurso = esSeguimiento
+    ? solicitud.tracking_code || solicitud.tracking_id
+    : solicitud.session_id;
+  const cantidadSesiones = Number(solicitud.session_count) || 0;
+  const formatoSeguimiento = String(solicitud.report_format || "PDF").toUpperCase() === "XLSX" ? "Excel" : "PDF";
+  const detalleSolicitud = esSeguimiento
+    ? `Informe ${formatoSeguimiento} · ${cantidadSesiones} ${cantidadSesiones === 1 ? "sesión asociada" : "sesiones asociadas"}`
+    : mostrar(solicitud.motivo);
+  const reportTarget = esSeguimiento
+    ? `el seguimiento ${solicitud.tracking_code || solicitud.tracking_id || "solicitado"}`
+    : `la sesión ${solicitud.session_id || "solicitada"}`;
 
-  const sesionAdmin = contexto?.status === "ok" ? contexto.data : null;
-  const rawData = sesionAdmin?.raw_data || {};
-  const duracion = sesionAdmin?.duracion ?? sesionAdmin?.duration;
-  const dificultad = sesionAdmin?.difficulty ?? sesionAdmin?.difficulty_level;
-  const estadoSesion = sesionAdmin?.status ?? sesionAdmin?.estado;
-  const inicioSesion =
-    sesionAdmin?.fechaInicio ||
-    (sesionAdmin?.fecha || sesionAdmin?.hora
-      ? `${sesionAdmin?.fecha || ""} ${sesionAdmin?.hora || ""}`.trim()
-      : null);
-
-  const handleAprobar = () => {
+  const completeReview = (approved, reason) => {
     setErrorAccion("");
     revisar.mutate(
-      { id: idUnico, approved: true },
-      {
-        onSuccess: () => {
-          setAccion(null);
-          onClose();
-        },
-        onError: (error) => {
-          setErrorAccion(error?.message || "No se pudo aprobar la solicitud.");
-        },
-      },
-    );
-  };
-
-  const handleRechazar = () => {
-    // El backend exige "reason" cuando approved=false (responde 400 si
-    // falta) — nunca es realmente opcional, así que se valida acá
-    // antes de llamar al endpoint en vez de dejar que falle.
-    if (!motivoRechazo.trim()) {
-      setErrorAccion("Debes indicar un motivo de rechazo.");
-      return;
-    }
-
-    setErrorAccion("");
-    revisar.mutate(
-      { id: idUnico, approved: false, reason: motivoRechazo.trim() },
+      { id, approved, reason },
       {
         onSuccess: () => {
           setAccion(null);
@@ -99,164 +64,112 @@ export default function ReportReview({ solicitud, nombreEspecialista, onClose })
           onClose();
         },
         onError: (error) => {
-          setErrorAccion(error?.message || "No se pudo rechazar la solicitud.");
+          setErrorAccion(error?.message || "No se pudo actualizar la solicitud.");
         },
       },
     );
   };
 
+  const handleReject = () => {
+    if (!motivoRechazo.trim()) {
+      setErrorAccion("Debes indicar un motivo de rechazo.");
+      return;
+    }
+    completeReview(false, motivoRechazo.trim());
+  };
+
   return (
     <>
       <Modal
-        open={open}
+        open={Boolean(solicitud)}
         onClose={onClose}
-        title="Revisión de solicitud de reporte"
+        title="Revisar solicitud"
         size="lg"
-        footer={
-          <>
-            <Button variant="ghost" onClick={onClose}>
-              Cerrar
-            </Button>
-            <Button variant="danger" onClick={() => setAccion("reject")}>
-              Rechazar solicitud
-            </Button>
-            <Button variant="primary" onClick={() => setAccion("approve")}>
-              Aprobar reporte
-            </Button>
-          </>
-        }
+        className="el-report-review-modal"
+        footer={(
+          <div className="el-report-review-actions">
+            <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+            {pendiente && (
+              <>
+                <Button variant="danger" onClick={() => setAccion("reject")}>Rechazar solicitud</Button>
+                <Button variant="primary" onClick={() => setAccion("approve")}>Aprobar reporte</Button>
+              </>
+            )}
+          </div>
+        )}
       >
+        <div className="el-report-review-summary">
+          <div className="el-report-review-summary-top">
+            <span className={`el-report-review-type${esSeguimiento ? " is-tracking" : ""}`}>
+              {esSeguimiento ? "Informe de seguimiento" : "Informe individual"}
+            </span>
+            <ReportStatusBadge status={solicitud.status} />
+          </div>
+          <h4 title={recurso || "ID no disponible"}>{mostrar(recurso)}</h4>
+          <p>{detalleSolicitud}</p>
+        </div>
+
         <section className="el-report-review-section">
-          <h4 className="el-report-review-section-title">Solicitud</h4>
+          <h4 className="el-report-review-section-title">Datos para la revisión</h4>
           <div className="el-report-review-facts">
             <div className="el-report-review-fact">
               <span>Especialista</span>
-              <span className="el-report-review-fact-value">{mostrar(nombreEspecialista)}</span>
+              <span className="el-report-review-fact-value">
+                {requester?.nombre || requester?.name || "Especialista solicitante"}
+              </span>
+              <code className="el-report-review-fact-detail">{mostrar(solicitud.requester_uid)}</code>
             </div>
             <div className="el-report-review-fact">
-              <span>Correo</span>
-              <span className="el-report-review-fact-value">{mostrar(solicitud.requester_email)}</span>
-            </div>
-            <div className="el-report-review-fact">
-              <span>Formato</span>
-              <span className="el-report-review-fact-value">{mostrar(solicitud.motivo)}</span>
+              <span>Motivo de la solicitud</span>
+              <span className="el-report-review-fact-value">{detalleSolicitud}</span>
             </div>
             <div className="el-report-review-fact">
               <span>Fecha de solicitud</span>
-              <span className="el-report-review-fact-value">{fechaSolicitud}</span>
-            </div>
-            <div className="el-report-review-fact">
-              <span>Estado de la solicitud</span>
-              <ReportStatusBadge status={solicitud.status} />
+              <span className="el-report-review-fact-value">{mostrar(fechaSolicitud)}</span>
             </div>
           </div>
-        </section>
-
-        <section className="el-report-review-section">
-          <h4 className="el-report-review-section-title">Contexto de la sesión</h4>
-
-          {cargandoContexto ? (
-            <SkeletonRows rows={4} columns={2} />
-          ) : contexto?.status === "unauthorized" ? (
-            <p className="el-report-review-notice">
-              <FiAlertTriangle aria-hidden="true" />
-              <span>No tienes autorización para ver el detalle completo de esta sesión.</span>
-            </p>
-          ) : contexto?.status !== "ok" ? (
-            <p className="el-report-review-notice">
-              <FiAlertTriangle aria-hidden="true" />
-              <span>No se pudo obtener el contexto de la sesión.</span>
-            </p>
-          ) : (
-            <>
-              <div className="el-report-review-facts">
-                <div className="el-report-review-fact">
-                  <span>ID de sesión</span>
-                  <span className="el-report-review-fact-value">
-                    {mostrar(sesionAdmin?.session_id || solicitud.session_id)}
-                  </span>
-                </div>
-                <div className="el-report-review-fact">
-                  <span>ID participante</span>
-                  <span className="el-report-review-fact-value">{mostrar(sesionAdmin?.idParticipante)}</span>
-                </div>
-                <div className="el-report-review-fact">
-                  <span>Nombre del alumno</span>
-                  <span className="el-report-review-fact-value">
-                    {mostrar(sesionAdmin?.nombre || rawData?.session_data?.nombre)}
-                  </span>
-                </div>
-                <div className="el-report-review-fact">
-                  <span>Fecha de la sesión</span>
-                  <span className="el-report-review-fact-value">{mostrar(inicioSesion)}</span>
-                </div>
-                <div className="el-report-review-fact">
-                  <span>Duración</span>
-                  <span className="el-report-review-fact-value">{mostrar(duracion)}</span>
-                </div>
-                <div className="el-report-review-fact">
-                  <span>Nivel de dificultad</span>
-                  <span className="el-report-review-fact-value">{mostrar(dificultad)}</span>
-                </div>
-                <div className="el-report-review-fact">
-                  <span>Estado de la sesión</span>
-                  <span className="el-report-review-fact-value">{mostrar(estadoSesion)}</span>
-                </div>
-              </div>
-
-              <div className="el-report-review-ai">
-                <span className="el-report-review-ai-label">Resultado de IA</span>
-                <AiResultCard sesionData={sesionAdmin} />
-              </div>
-            </>
-          )}
-        </section>
-
-        <section className="el-report-review-section">
-          <h4 className="el-report-review-section-title">Consentimiento</h4>
           <p className="el-report-review-notice">
             <FiInfo aria-hidden="true" />
-            <span>Información de consentimiento no disponible desde el frontend.</span>
+            <span>La revisión muestra solo los datos de la solicitud. No incluye las respuestas ni los resultados de IA.</span>
           </p>
         </section>
-
-        {errorAccion && <p className="el-report-review-error">{errorAccion}</p>}
+        {errorAccion && <p className="el-report-review-error" role="alert">{errorAccion}</p>}
       </Modal>
 
       <ConfirmationDialog
         open={accion === "approve"}
         title="Aprobar reporte"
-        message="¿Confirmas la aprobación de este reporte? Al aprobarlo se iniciará el proceso de generación del PDF."
+        message={`Al aprobar esta solicitud, autorizas a ${requesterName} a descargar el informe de ${reportTarget}.`}
         confirmLabel="Aprobar reporte"
         cancelLabel="Cancelar"
         loading={revisar.isPending}
-        onConfirm={handleAprobar}
+        onConfirm={() => completeReview(true)}
         onCancel={() => setAccion(null)}
       >
-        {errorAccion && <p className="el-report-review-error">{errorAccion}</p>}
+        {errorAccion && <p className="el-report-review-error" role="alert">{errorAccion}</p>}
       </ConfirmationDialog>
 
       <ConfirmationDialog
         open={accion === "reject"}
         title="Rechazar solicitud"
-        message="¿Confirmas el rechazo de esta solicitud de reporte? El motivo es obligatorio."
+        message="Indica el motivo del rechazo."
         confirmLabel="Rechazar solicitud"
         cancelLabel="Cancelar"
         tone="danger"
         loading={revisar.isPending}
-        onConfirm={handleRechazar}
+        onConfirm={handleReject}
         onCancel={() => setAccion(null)}
       >
         <label className="el-report-review-reason">
           Motivo del rechazo
           <textarea
             value={motivoRechazo}
-            onChange={(e) => setMotivoRechazo(e.target.value)}
+            onChange={(event) => setMotivoRechazo(event.target.value)}
             rows={3}
             placeholder="Explica brevemente por qué se rechaza la solicitud."
           />
         </label>
-        {errorAccion && <p className="el-report-review-error">{errorAccion}</p>}
+        {errorAccion && <p className="el-report-review-error" role="alert">{errorAccion}</p>}
       </ConfirmationDialog>
     </>
   );

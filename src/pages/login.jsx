@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import emotionLabLogo from "../assets/emotionlab-logo.png";
 import "./login.css";
 import toast from "react-hot-toast";
 import { useNavigate, Link } from "react-router-dom";
@@ -227,9 +228,7 @@ export default function Login() {
            ==================================================== */}
 
         <header className="login-header">
-          <div className="login-brand-mark">
-            E
-          </div>
+          <img className="login-brand-mark" src={emotionLabLogo} alt="" />
 
           <div>
             <h1

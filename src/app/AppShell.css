@@ -1,5 +1,7 @@
 .el-shell {
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: clip;
   background: var(--color-bg);
 }
 
@@ -12,12 +14,21 @@
 
 .el-shell-main {
   flex: 1;
-  padding: var(--space-8);
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: clamp(20px, 3vw, 40px);
   box-sizing: border-box;
 }
 
 @media (max-width: 960px) {
+  .el-shell-body { margin-left: 0; }
   .el-shell-main {
-    padding: var(--space-4);
+    padding: 22px;
   }
+}
+
+@media (max-width: 760px) {
+  .el-shell-body { margin-left: 0; }
+  .el-shell-main { padding: 16px; }
 }

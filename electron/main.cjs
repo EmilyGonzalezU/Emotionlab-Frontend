@@ -1,6 +1,12 @@
-const { app, BrowserWindow, session, ipcMain } = require("electron");
+const { app, BrowserWindow, session, ipcMain, protocol, net, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { pathToFileURL } = require("url");
+
+protocol.registerSchemesAsPrivileged([{
+  scheme: "emotionlab",
+  privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true },
+}]);
 
 const {
   configureUpdater,
@@ -16,12 +22,16 @@ let mainWindow = null;
  * Crea la ventana principal de EmotionLab.
  */
 async function createWindow() {
+  const frontendRoot = path.resolve(__dirname, "..", "dist");
+  const frontendPath = path.join(frontendRoot, "index.html");
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1100,
     minHeight: 700,
     title: "EmotionLab",
+    icon: path.join(__dirname, "../public/icon.ico"),
     autoHideMenuBar: true,
     show: false,
     backgroundColor: "#f8fafc",
@@ -33,8 +43,36 @@ async function createWindow() {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
+  });
+
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    try {
+      const destination = new URL(url);
+      if (destination.protocol !== "emotionlab:" || destination.hostname !== "bundle") {
+        event.preventDefault();
+      }
+    } catch {
+      event.preventDefault();
+    }
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const external = new URL(url);
+      const isS3Host = /^(?:[a-z0-9.-]+\.)?s3(?:\.dualstack)?\.us-east-1\.amazonaws\.com$/i.test(external.hostname)
+        || /^s3\.us-east-1\.amazonaws\.com$/i.test(external.hostname);
+      const hasSignature = external.searchParams.has("X-Amz-Signature")
+        || (external.searchParams.has("AWSAccessKeyId") && external.searchParams.has("Signature"));
+      if (external.protocol === "https:" && isS3Host && hasSignature) {
+        void shell.openExternal(external.toString()).catch((error) => {
+          console.warn("No se pudo abrir el enlace de descarga:", error.message);
+        });
+      }
+    } catch (error) {
+      console.warn("Se rechazó una URL externa no válida:", error.message);
+    }
+    return { action: "deny" };
   });
 
   /**
@@ -82,13 +120,6 @@ async function createWindow() {
   /**
    * Frontend compilado por Vite.
    */
-  const frontendPath = path.join(
-    __dirname,
-    "..",
-    "dist",
-    "index.html"
-  );
-
   console.log("📄 Frontend path:", frontendPath);
 
   if (!fs.existsSync(frontendPath)) {
@@ -103,7 +134,7 @@ async function createWindow() {
   }
 
   try {
-    await mainWindow.loadFile(frontendPath);
+    await mainWindow.loadURL("emotionlab://bundle/index.html");
   } catch (error) {
     console.error(
       "❌ Error cargando frontend:",
@@ -243,6 +274,29 @@ if (!gotSingleInstanceLock) {
       );
     }
 
+    protocol.handle("emotionlab", async (request) => {
+      const requested = new URL(request.url);
+      if (requested.hostname !== "bundle" || !["GET", "HEAD"].includes(request.method)) {
+        return new Response("Not found", { status: 404 });
+      }
+      let pathname;
+      try {
+        pathname = decodeURIComponent(requested.pathname);
+      } catch {
+        return new Response("Bad request", { status: 400 });
+      }
+      const target = path.resolve(path.join(__dirname, "..", "dist"), `.${pathname}`);
+      const relative = path.relative(path.join(__dirname, "..", "dist"), target);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      try {
+        return await net.fetch(pathToFileURL(target).toString());
+      } catch {
+        return new Response("Not found", { status: 404 });
+      }
+    });
+    session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
     await createWindow();
 
     app.on("activate", async () => {

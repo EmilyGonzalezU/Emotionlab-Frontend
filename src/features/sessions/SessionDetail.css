@@ -685,13 +685,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-
-  max-height: 420px;
-  overflow-y: auto;
+  min-width: 0;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
 }
 
 .el-session-detail-answer {
   display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   gap: var(--space-3);
 
   padding: var(--space-3);
@@ -755,6 +759,9 @@
 .el-session-detail-event {
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   gap: var(--space-3);
 
   padding: var(--space-2) var(--space-3);
@@ -812,6 +819,72 @@
 
   color: var(--color-ink-faint);
   font-size: var(--text-xs);
+}
+
+.el-session-detail-card:has(.el-session-detail-answer-stages),
+.el-session-detail-card:has(.el-session-detail-events) {
+  display: flex;
+  box-sizing: border-box;
+  height: 520px;
+  min-height: 520px;
+  flex-direction: column;
+}
+.el-session-detail-answer-stages {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+  scrollbar-color: #aebbc9 #edf1f4;
+  scrollbar-width: auto;
+}
+.el-session-detail-events {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+  scrollbar-color: #aebbc9 #edf1f4;
+  scrollbar-width: auto;
+}
+.el-session-detail-answer-stages::-webkit-scrollbar,
+.el-session-detail-events::-webkit-scrollbar { width: 10px; }
+.el-session-detail-answer-stages::-webkit-scrollbar-track,
+.el-session-detail-events::-webkit-scrollbar-track { border-radius: 8px; background: #edf1f4; }
+.el-session-detail-answer-stages::-webkit-scrollbar-thumb,
+.el-session-detail-events::-webkit-scrollbar-thumb { min-height: 34px; border: 2px solid #edf1f4; border-radius: 8px; background: #aebbc9; }
+.el-session-detail-answer-stages::-webkit-scrollbar-thumb:hover,
+.el-session-detail-events::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+.el-session-detail-answer-note { margin: calc(var(--space-3) * -1) 0 var(--space-4); color: var(--color-ink-soft); font-size: var(--text-xs); line-height: 1.5; }
+.el-session-detail-answer-value.is-normalization-error { color: var(--color-danger); font-size: var(--text-sm); }
+.el-session-detail-answer-stage > h4 { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 var(--space-3); color: var(--color-ink); font-size: var(--text-sm); }
+.el-session-detail-answer-stage > h4 span { color: var(--color-ink-faint); font-size: var(--text-xs); font-weight: 500; }
+.el-session-detail-answer-stage .el-session-detail-answers { max-height: none; }
+.el-session-detail-answer { display: block; overflow-wrap: anywhere; }
+.el-session-detail-answer-header { font-weight: 600; color: var(--color-ink); }
+.el-session-detail-answer-value { font-size: var(--text-lg); }
+.el-session-detail-event { align-items: flex-start; border-left: 3px solid var(--color-brand-soft); }
+.el-session-detail-event-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.el-session-detail-event-name details { margin-top: 4px; color: var(--color-ink-faint); font-size: var(--text-xs); font-weight: 400; }
+.el-session-detail-event-name summary { cursor: pointer; }
+.el-session-detail-event-time { flex-shrink: 0; color: var(--color-ink-faint); font-size: var(--text-xs); }
+.el-session-detail-event-time:empty { display: none; }
+
+@media (max-width: 520px) {
+  .el-session-detail-card:has(.el-session-detail-answer-stages),
+  .el-session-detail-card:has(.el-session-detail-events) {
+    height: 440px;
+    min-height: 440px;
+    padding: var(--space-4);
+  }
 }
 
 /* ==========================================================

@@ -1,13 +1,17 @@
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import {
   createReportRequest,
+  createTrackingReportRequest,
   fetchMyReportRequests,
   fetchPendingReportRequests,
   fetchReportDownloadUrl,
-  fetchSessionContextForAdmin,
   fetchUsers,
   reviewReportRequest,
 } from "./reportsApi.js";
+
+const avisosInformesListos = new Set();
 
 /**
  * Hooks de React Query para Reportes (Fase 4). Mismo criterio de
@@ -21,15 +25,42 @@ import {
  *   ["reportRequests", "mine"]        -> solicitudes propias del especialista
  *   ["reportRequests", "pending"]     -> cola de revisión del administrador
  *   ["users"]                         -> usuarios registrados (solo para
- *                                         cruzar el nombre del especialista)
- *   ["sessions", "adminContext", id]  -> contexto de sesión para la
- *                                         revisión del administrador
+ *                                         identificar al especialista solicitante)
  */
-export function useMyReportRequests() {
-  return useQuery({
+export function useMyReportRequests({ enabled = true } = {}) {
+  const estadosPrevios = useRef(null);
+  const query = useQuery({
     queryKey: ["reportRequests", "mine"],
     queryFn: fetchMyReportRequests,
+    staleTime: 5_000,
+    enabled,
+    refetchInterval: 10000,
+    refetchIntervalInBackground: false,
   });
+  useEffect(() => {
+    const requests = Array.isArray(query.data) ? query.data : query.data?.items || [];
+    const estadosActuales = new Map();
+    for (const request of requests) {
+      const id = request.report_request_id || request.request_id || request.id;
+      if (!id) continue;
+      const status = String(request.status || "").toUpperCase();
+      const idKey = String(id);
+      const estadoAnterior = estadosPrevios.current?.get(idKey);
+      if (status === "REJECTED" && estadoAnterior && estadoAnterior !== "REJECTED") {
+        const reason = request.rejection_reason || request.reason;
+        toast.error(`Tu solicitud de informe fue rechazada.${reason ? ` Motivo: ${reason}` : ""}`, { duration: 8000 });
+      }
+      estadosActuales.set(idKey, status);
+      if (status !== "COMPLETED" || request.downloaded_at || avisosInformesListos.has(id)) continue;
+      avisosInformesListos.add(id);
+      const resource = request.report_type === "TRACKING"
+        ? `el seguimiento ${request.tracking_code || request.tracking_id || "solicitado"}`
+        : `la sesión ${request.session_id || "solicitada"}`;
+      toast.success(`Se aprobó la descarga de: ${resource}. El informe está listo para descargar.`, { duration: 7000 });
+    }
+    estadosPrevios.current = estadosActuales;
+  }, [query.data]);
+  return query;
 }
 
 export function useCreateReportRequest() {
@@ -45,10 +76,24 @@ export function useCreateReportRequest() {
   });
 }
 
-export function usePendingReportRequests() {
+export function useCreateTrackingReportRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ trackingId, reportFormat }) => createTrackingReportRequest(trackingId, reportFormat),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["reportRequests", "mine"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["reportRequests", "pending"], refetchType: "all" }),
+      ]);
+    },
+  });
+}
+
+export function usePendingReportRequests({ enabled = true } = {}) {
   return useQuery({
     queryKey: ["reportRequests", "pending"],
     queryFn: fetchPendingReportRequests,
+    enabled,
   });
 }
 
@@ -72,14 +117,6 @@ export function useUsersDirectory() {
   return useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers,
-  });
-}
-
-export function useSessionContextForAdmin(sessionId) {
-  return useQuery({
-    queryKey: ["sessions", "adminContext", sessionId],
-    queryFn: () => fetchSessionContextForAdmin(sessionId),
-    enabled: Boolean(sessionId),
   });
 }
 

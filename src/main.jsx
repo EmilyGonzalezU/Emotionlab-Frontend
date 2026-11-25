@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import App from "./App.jsx"; // aca importamos la funcion App de app.jsx que tiene toda la lógica de rutas
+import "./styles/visual-refresh.css";
 import { AuthProvider } from "./context/AuthContext.jsx";
 
 // Cliente único de React Query (Fase 0). Las pantallas existentes no
@@ -13,6 +14,8 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
+      staleTime: 20_000,
+      gcTime: 5 * 60_000,
     },
   },
 });

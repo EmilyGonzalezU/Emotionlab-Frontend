@@ -1,7 +1,7 @@
 import React from "react";
 import "./Button.css";
 
-const VARIANTS = ["primary", "secondary", "danger", "ghost"];
+const VARIANTS = ["primary", "secondary", "outline", "danger", "ghost"];
 
 /**
  * Botón base del sistema. Reemplaza las ~15 variantes de `.btn-*` con
@@ -19,14 +19,18 @@ export default function Button({
   disabled = false,
   type = "button",
   children,
+  className = "",
   ...rest
 }) {
   const variantClass = VARIANTS.includes(variant) ? variant : "primary";
+  const classes = ["el-btn", `el-btn-${variantClass}`, `el-btn-${size}`, className]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <button
       type={type}
-      className={`el-btn el-btn-${variantClass} el-btn-${size}`}
+      className={classes}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...rest}

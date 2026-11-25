@@ -16,6 +16,7 @@ export default function Modal({
   children,
   footer,
   size = "md",
+  className = "",
 }) {
   const dialogRef = useRef(null);
   const yaAplicoFocoInicial = useRef(false);
@@ -58,7 +59,7 @@ export default function Modal({
       }}
     >
       <div
-        className={`el-modal el-modal-${size}`}
+        className={`el-modal el-modal-${size} ${className}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-label={title}

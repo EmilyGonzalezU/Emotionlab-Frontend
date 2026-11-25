@@ -1,31 +1,6 @@
 /* src/pages/Login.css */
 
-/* 1. Definimos tu paleta de colores globalmente */
-:root {
-  /* Estados */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
-
-  /* Primarios */
-  --color-primary: #17315e;
-  --color-primary-hover: #102548;
-  --color-primary-light: #2e5aac;
-  --color-secondary: #eaf2ff;
-
-  /* Fondos y bordes */
-  --color-bg-main: #f8fafc;
-  --color-bg-card: #ffffff;
-  --color-border: #e2e8f0;
-
-  /* Textos */
-  --color-text-main: #1e293b;
-  --color-text-sec: #64748b;
-  --color-disabled: #cbd5e1;
-}
-
-/* 2. Estructura base */
+/* 2. Estructura base: los valores semánticos vienen de styles/tokens.css. */
 html,
 body,
 #root {
@@ -47,7 +22,7 @@ body,
   min-height: 100vh;
   padding: 2rem;
   box-sizing: border-box;
-  /* Usamos tu Azul Oscuro (#102548) para salvar esos ojos */
+  /* Usamos tu Azul Oscuro (#0e1c2c) para salvar esos ojos */
   background-color: var(--color-primary-hover);
 }
 
@@ -90,6 +65,7 @@ body,
   color: #ffffff;
   font-size: 1.25rem;
   font-weight: 700;
+  object-fit: contain;
 }
 
 /* Tipografía */
@@ -154,7 +130,7 @@ body,
 }
 
 .form-input-error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  box-shadow: var(--shadow-danger-focus);
 }
 
 /* Envoltorio del campo de contraseña (PasswordField). Antes no tenía
@@ -187,12 +163,13 @@ body,
 /* Botón de ingresar */
 .form-button {
   width: 100%;
-  padding: 0.85rem;
-  background-color: var(--color-primary);
+  min-height: var(--control-height);
+  padding: 0 14px;
+  background-color: var(--color-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--control-radius);
   color: #ffffff;
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -206,7 +183,7 @@ body,
 }
 
 .form-button:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+  background-color: var(--color-accent-strong);
 }
 
 .form-button:active:not(:disabled) {

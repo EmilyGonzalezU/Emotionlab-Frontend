@@ -12,41 +12,26 @@
  * como error cuando aparece.
  */
 
-const PRIORIDAD_ESTADOS = [
-  "COMPLETED",
-  "APPROVED",
-  "PENDING",
-  "REJECTED",
-];
-
 /**
  * Obtiene la solicitud más relevante para una sesión.
  *
- * El flujo actual maneja una solicitud de reporte por sesión, por lo que
- * no se depende de motivo === PDF/EXCEL.
- *
- * Las solicitudes con status === "error" quedan en último lugar (no son
- * estados válidos para priorizar sobre el resto).
+ * Se usa la más reciente por fecha de actualización/creación. Priorizar
+ * el estado PENDING sobre la fecha hacía que una solicitud vieja pendiente
+ * ocultara otra posterior ya aprobada o lista para descargar.
  */
 export function obtenerSolicitudRelevante(solicitudes) {
   if (!Array.isArray(solicitudes) || solicitudes.length === 0) {
     return null;
   }
-
-  for (const estado of PRIORIDAD_ESTADOS) {
-    const encontrada = solicitudes.find(
-      (solicitud) =>
-        String(solicitud?.status || "").toUpperCase() === estado
-    );
-
-    if (encontrada) {
-      return encontrada;
-    }
-  }
-
-  // Si todas las solicitudes restantes tienen estado desconocido/error,
-  // devolvemos la primera pero nunca se inventará un estado válido.
-  return solicitudes[0] || null;
+  const fecha = (solicitud) => String(
+    solicitud?.updated_at
+      || solicitud?.reviewed_at
+      || solicitud?.requested_at
+      || solicitud?.created_at
+      || ""
+  );
+  return solicitudes.reduce((latest, request) =>
+    !latest || fecha(request) > fecha(latest) ? request : latest, null);
 }
 
 /**

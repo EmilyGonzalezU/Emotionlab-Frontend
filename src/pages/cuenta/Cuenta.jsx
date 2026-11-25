@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getRoleLabel } from "../../lib/roles.js";
 import { validateNewPassword } from "../../lib/passwordPolicy.js";
-import { getApiUrl } from "../../config/api.js";
 import { api } from "../../lib/apiClient.js";
 import PageHeader from "../../ui/PageHeader.jsx";
 import Badge from "../../ui/Badge.jsx";
@@ -126,41 +125,20 @@ export default function Cuenta() {
     setConfirmando(true);
   };
 
-  // Se mantiene un fetch directo (no apiClient) a propósito: un 401
-  // aquí puede significar tanto "sesión vencida" como "contraseña
-  // actual incorrecta" según cómo lo responda el backend, y apiClient
-  // trataría cualquier 401 como cierre de sesión. Sin confirmar ese
-  // detalle en el backend, usar apiClient aquí podría cerrarle la
-  // sesión a alguien que solo escribió mal su contraseña actual.
   const confirmarCambio = async () => {
     setConfirmando(false);
     setEnviando(true);
     try {
-      const token = localStorage.getItem("token");
-      const respuesta = await fetch(getApiUrl("/users/me/password"), {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      await api.patch("/users/me/password", {
           current_password: claves.actual,
           new_password: claves.nueva,
-        }),
       });
-
-      const data = await respuesta.json().catch(() => null);
-
-      if (respuesta.ok) {
-        toast.success("Contraseña actualizada con éxito.");
-        setClaves(CLAVES_INICIALES);
-        setErrorNueva("");
-        setErrorConfirmar("");
-      } else {
-        toast.error(data?.error || "Contraseña actual incorrecta.");
-      }
-    } catch {
-      toast.error("No pudimos conectar con el servidor. Intenta nuevamente.");
+      toast.success("Contraseña actualizada con éxito.");
+      setClaves(CLAVES_INICIALES);
+      setErrorNueva("");
+      setErrorConfirmar("");
+    } catch (error) {
+      toast.error(error?.message || "No pudimos conectar con el servidor. Intenta nuevamente.");
     } finally {
       setEnviando(false);
     }

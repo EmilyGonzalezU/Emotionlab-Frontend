@@ -82,7 +82,7 @@ export function esCambioNoVisto(solicitud, store) {
 }
 
 export function useReadTracking(solicitudes) {
-  const lista = solicitudes || [];
+  const lista = useMemo(() => solicitudes || [], [solicitudes]);
 
   const store = useMemo(() => leerStorage(), []);
 

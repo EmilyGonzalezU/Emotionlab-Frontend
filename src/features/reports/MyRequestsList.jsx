@@ -12,6 +12,7 @@ import {
   useMyReportRequests,
   useReportDownloadUrl,
 } from "./useReports.js";
+import { formatChileDate, formatChileInstant } from "../sessions/sessionDisplay.js";
 import {
   useReadTracking,
   marcarSolicitudVista,
@@ -27,7 +28,7 @@ function mostrar(valor) {
 function formatearFecha(iso) {
   if (!iso) return "No disponible";
   try {
-    return new Date(iso).toLocaleDateString("es-CL");
+    return formatChileDate(iso);
   } catch {
     return String(iso);
   }
@@ -36,7 +37,7 @@ function formatearFecha(iso) {
 function formatearFechaHora(iso) {
   if (!iso) return "No disponible";
   try {
-    return new Date(iso).toLocaleString("es-CL");
+    return formatChileInstant(iso);
   } catch {
     return String(iso);
   }
@@ -85,10 +86,10 @@ export default function MyRequestsList() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [refrescando, setRefrescando] = useState(false);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [paginaActual, setPaginaActual] = useState(1);
 
   const [errorDescarga, setErrorDescarga] = useState("");
   const [mostrarErrorDescarga, setMostrarErrorDescarga] = useState(false);
-
   const handleRefrescar = async () => {
     setRefrescando(true);
     try {
@@ -108,12 +109,18 @@ export default function MyRequestsList() {
       if (!termino) return true;
       return (
         String(s.session_id || "").toLowerCase().includes(termino) ||
+        String(s.tracking_code || s.tracking_id || "").toLowerCase().includes(termino) ||
         String(s.motivo || "").toLowerCase().includes(termino) ||
         String(getMotivoRevision(s) || "").toLowerCase().includes(termino) ||
         String(s.id || s.request_id || "").toLowerCase().includes(termino)
       );
     });
   }, [solicitudes, busqueda, filtroEstado]);
+  const solicitudesPorPagina = 8;
+  const totalPaginas = Math.max(1, Math.ceil(solicitudesFiltradas.length / solicitudesPorPagina));
+  const solicitudesPaginadas = solicitudesFiltradas.slice((paginaActual - 1) * solicitudesPorPagina, paginaActual * solicitudesPorPagina);
+  useEffect(() => setPaginaActual(1), [busqueda, filtroEstado]);
+  useEffect(() => setPaginaActual((page) => Math.min(page, totalPaginas)), [totalPaginas]);
 
   const abrirDetalle = (solicitud) => {
     marcarSolicitudVista(solicitud);
@@ -177,7 +184,7 @@ export default function MyRequestsList() {
     <div className="el-reports-list">
       <PageHeader
         title="Mis solicitudes de reportes"
-        description="Historial de solicitudes de reportes enviadas y su estado actual."
+        description="Revisa el estado de tus solicitudes de informes."
         actions={
           <Button
             variant="secondary"
@@ -191,31 +198,31 @@ export default function MyRequestsList() {
         }
       />
 
-      <div className="el-reports-search" style={{ gap: "8px", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 240px", minWidth: 0 }}>
+      <div className="el-reports-search el-my-requests-filters">
+        <label className="el-my-requests-search-field">
           <FiSearch aria-hidden="true" />
           <input
             type="text"
             className="el-reports-search-input"
-            placeholder="Buscar por sesión, formato o ID"
+            placeholder="Buscar por sesi&#xF3;n, formato o ID"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             aria-label="Buscar solicitudes"
           />
-        </div>
-        <select
-          className="el-reports-search-input"
-          style={{ flex: "0 1 auto", minWidth: "160px" }}
-          value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-          aria-label="Filtrar por estado"
-        >
-          {estadosDisponibles.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        </label>
+        <label className="el-my-requests-status-field">
+          <span>Estado</span>
+          <select
+            className="el-reports-search-input"
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            aria-label="Filtrar por estado"
+          >
+            {estadosDisponibles.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <section className="el-reports-table-card">
@@ -238,12 +245,12 @@ export default function MyRequestsList() {
           />
         ) : (
           <div className="el-reports-table-scroll">
-            <table className="el-reports-table">
+            <table className="el-table el-reports-table">
               <thead>
                 <tr>
                   <th>Solicitud</th>
-                  <th>Sesión</th>
-                  <th>Participante</th>
+                  <th>Sesion / seguimiento</th>
+                  <th>Alcance</th>
                   <th>Fecha</th>
                   <th>Estado</th>
                   <th>Solicitante</th>
@@ -251,7 +258,7 @@ export default function MyRequestsList() {
                 </tr>
               </thead>
               <tbody>
-                {solicitudesFiltradas.map((s) => {
+                {solicitudesPaginadas.map((s) => {
                   const sid = idUnico(s);
                   return (
                     <tr key={sid || String(s.session_id || Math.random())}>
@@ -263,8 +270,8 @@ export default function MyRequestsList() {
                           )}
                         </div>
                       </td>
-                      <td className="el-reports-table-id">{s.session_id || "—"}</td>
-                      <td>{mostrar(s.participant_id || s.participant_name || "—")}</td>
+                      <td className="el-reports-table-id">{s.report_type === "TRACKING" ? `Seguimiento ${s.tracking_code || s.tracking_id}` : s.session_id || "-"}</td>
+                      <td>{s.report_type === "TRACKING" ? `${String(s.report_format || "PDF").toUpperCase() === "XLSX" ? "Excel" : "PDF"} · ${s.session_count || 0} sesiones incluidas` : "Informe de esta sesión"}</td>
                       <td>{formatearFecha(s.created_at)}</td>
                       <td>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
@@ -276,7 +283,7 @@ export default function MyRequestsList() {
                                 alignItems: "flex-start",
                                 gap: "4px",
                                 fontSize: "12px",
-                                color: "var(--el-color-danger)",
+                                color: "var(--color-danger)",
                                 lineHeight: 1.3,
                                 minWidth: 0,
                               }}
@@ -315,6 +322,10 @@ export default function MyRequestsList() {
             </table>
           </div>
         )}
+        {!isLoading && !isError && solicitudesFiltradas.length > solicitudesPorPagina && <div className="el-pagination el-my-requests-pagination">
+          <span>{(paginaActual - 1) * solicitudesPorPagina + 1}–{Math.min(paginaActual * solicitudesPorPagina, solicitudesFiltradas.length)} de {solicitudesFiltradas.length} solicitudes</span>
+          <div><Button variant="secondary" size="sm" onClick={() => setPaginaActual((page) => Math.max(1, page - 1))} disabled={paginaActual === 1}>Anterior</Button><span>Página {paginaActual} de {totalPaginas}</span><Button variant="secondary" size="sm" onClick={() => setPaginaActual((page) => Math.min(totalPaginas, page + 1))} disabled={paginaActual === totalPaginas}>Siguiente</Button></div>
+        </div>}
       </section>
 
       <DetalleSolicitudModal
@@ -380,7 +391,7 @@ function DetalleSolicitudModal({ solicitud, onClose, onDescargar, descargando })
   if (!solicitud) return null;
 
   const estado = String(solicitud.status || "").toUpperCase();
-  const puedeDescargar = estado === "COMPLETED";
+  const puedeDescargar = estado === "COMPLETED" && !solicitud.downloaded_at;
   const idSolicitud =
     solicitud.report_request_id || solicitud.request_id || solicitud.id;
 
@@ -418,16 +429,12 @@ function DetalleSolicitudModal({ solicitud, onClose, onDescargar, descargando })
             </span>
           </div>
           <div className="el-report-review-fact">
-            <span>Sesión</span>
-            <span className="el-report-review-fact-value">
-              {mostrar(solicitud.session_id)}
-            </span>
+            <span>{solicitud.report_type === "TRACKING" ? "Seguimiento" : "Sesion"}</span>
+            <span className="el-report-review-fact-value">{mostrar(solicitud.report_type === "TRACKING" ? solicitud.tracking_code || solicitud.tracking_id : solicitud.session_id)}</span>
           </div>
           <div className="el-report-review-fact">
             <span>Formato</span>
-            <span className="el-report-review-fact-value">
-              {mostrar(solicitud.motivo)}
-            </span>
+            <span className="el-report-review-fact-value">{solicitud.report_type === "TRACKING" ? `Informe ${String(solicitud.report_format || "PDF").toUpperCase() === "XLSX" ? "Excel" : "PDF"} (${solicitud.session_count || 0} sesiones)` : mostrar(solicitud.motivo)}</span>
           </div>
           <div className="el-report-review-fact">
             <span>Fecha de solicitud</span>
@@ -443,20 +450,8 @@ function DetalleSolicitudModal({ solicitud, onClose, onDescargar, descargando })
       </section>
 
       <section className="el-report-review-section">
-        <h4 className="el-report-review-section-title">Participante y solicitante</h4>
+        <h4 className="el-report-review-section-title">Solicitante</h4>
         <div className="el-report-review-facts">
-          <div className="el-report-review-fact">
-            <span>ID participante</span>
-            <span className="el-report-review-fact-value">
-              {mostrar(solicitud.participant_id)}
-            </span>
-          </div>
-          <div className="el-report-review-fact">
-            <span>Nombre participante</span>
-            <span className="el-report-review-fact-value">
-              {mostrar(solicitud.participant_name)}
-            </span>
-          </div>
           <div className="el-report-review-fact">
             <span>Solicitante</span>
             <span className="el-report-review-fact-value">

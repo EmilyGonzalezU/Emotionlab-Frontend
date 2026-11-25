@@ -2,9 +2,13 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearAuthStorage } from "../lib/authStorage.js";
+import { clearPrivateQueryCache } from "../lib/privateQueryCache.js";
 
 const AuthContext = createContext(null);
 
@@ -44,18 +48,30 @@ function leerSesionInicial() {
  */
 export function AuthProvider({ children }) {
   const [sesion, setSesion] = useState(leerSesionInicial);
+  const queryClient = useQueryClient();
+
+  const clearAccountData = useCallback(() => {
+    clearPrivateQueryCache(queryClient);
+  }, [queryClient]);
 
   const login = useCallback((token, user) => {
+    clearAccountData();
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
     if (user?.rol) localStorage.setItem("rol", user.rol);
     setSesion({ token, user, rol: user?.rol || leerRolDesdeToken(token) });
-  }, []);
+  }, [clearAccountData]);
 
   const logout = useCallback(() => {
-    localStorage.clear();
+    clearAuthStorage();
+    clearAccountData();
     setSesion({ token: null, user: null, rol: null });
-  }, []);
+  }, [clearAccountData]);
+
+  useEffect(() => {
+    window.addEventListener("emotionlab:session-expired", logout);
+    return () => window.removeEventListener("emotionlab:session-expired", logout);
+  }, [logout]);
 
   const value = useMemo(
     () => ({

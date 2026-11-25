@@ -1,51 +1,94 @@
 /* ============================================================
    DESIGN TOKENS — EmotionLab
    ============================================================
-   Formaliza como variables CSS los colores y medidas que ya
-   existían dispersos como literales (style={{ color: "#17315E" }})
-   en distintas pantallas. No introduce una paleta nueva: la marca
-   se mantiene (#17315E), solo se centraliza.
+   Sistema de diseño centralizado "Modern SaaS Intelligence — Light UI".
 
-   No se define aquí ninguna regla visual (nada de selectores).
-   Este archivo solo declara variables; hasta que los componentes
-   las consuman, importarlo no cambia ningún píxel existente.
+   Este archivo solo declara variables (ningún selector). Cambiar aquí
+   un token propaga el nuevo aspecto a todo el kit src/ui, al AppShell
+   (Sidebar/Header) y a las pantallas que ya consumen estos nombres.
 
-   Nota: se usa la pila de fuentes del sistema (system-ui / Segoe UI)
-   en vez de una fuente web descargada, porque EmotionLab es una
-   app de escritorio (Electron) que debe poder abrirse sin conexión.
+   Notas de accesibilidad:
+   - Texto principal (#172B3A) sobre Surface (#FFFFFF): contraste AA/AAA.
+   - El color nunca es el único medio para comunicar un estado: los
+     badges llevan etiqueta textual además del color.
+   - --color-accent (#18A6A0) se reserva para acciones destacadas y
+     acentos; sobre blanco se usa siempre con texto blanco (peso >= 600).
+
+   Nota: se mantiene la pila de fuentes del sistema (system-ui / Segoe UI)
+   porque EmotionLab es una app de escritorio (Electron) que debe abrirse
+   sin conexión.
    ============================================================ */
 
 :root {
-  /* ---- Color de marca ---- */
-  --color-brand: #17315e;
-  --color-brand-strong: #0f1f3d;
-  --color-brand-soft: #eaf1ff;
-  --color-brand-soft-line: #c9d9f5;
+  /* ---- Color primario (navegación y elementos principales) ---- */
+  --color-primary: #14283f;
+  --color-primary-strong: #0e1c2c;
+  --color-primary-soft: #e7edf3;
+  --color-primary-soft-line: #cbd8e4;
+  --color-primary-hover: var(--color-primary-strong);
+  --color-primary-light: var(--color-accent);
+
+  /* ---- Color de acento (acciones destacadas y acentos) ---- */
+  --color-accent: #18a6a0;
+  --color-accent-strong: #138b86;
+  --color-accent-soft: #e6f6f5;
+  --color-accent-soft-line: #b8e6e4;
+
+  /* ---- Alias de compatibilidad (no romper componentes existentes) ----
+     Los componentes actuales usan --color-brand*; se mantienen apuntando
+     al color primario para que el cambio de paleta propague sin tocarlos. */
+  --color-brand: var(--color-primary);
+  --color-brand-strong: var(--color-primary-strong);
+  --color-brand-soft: var(--color-primary-soft);
+  --color-brand-soft-line: var(--color-primary-soft-line);
 
   /* ---- Texto y superficies ---- */
-  --color-ink: #1f2a37;
+  --color-ink: #172b3a;
   --color-ink-soft: #64748b;
   --color-ink-faint: #94a3b8;
 
   --color-surface: #ffffff;
-  --color-bg: #f4f6f9;
+  --color-bg: #f3f6f8;
   --color-line: #e2e8f0;
-  --color-line-soft: #edf1f5;
+  --color-line-soft: #eef2f6;
   --color-neutral-bg: #f1f5f9;
   --color-neutral-line: #e2e8f0;
 
   /* ---- Color semántico (reservado a estados, nunca decorativo) ---- */
-  --color-success: #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-success-line: #bbf7d0;
+  --color-info: #3b82f6;
+  --color-info-strong: #1d4ed8;
+  --color-info-bg: #eff6ff;
+  --color-info-line: #bfdbfe;
 
-  --color-warning: #b45309;
-  --color-warning-bg: #fef3c7;
+  --color-success: #10b981;
+  --color-success-strong: #047857;
+  --color-success-bg: #ecfdf5;
+  --color-success-line: #a7f3d0;
+
+  --color-warning: #f59e0b;
+  --color-warning-strong: #b45309;
+  --color-warning-bg: #fffbeb;
   --color-warning-line: #fde68a;
 
-  --color-danger: #dc2626;
-  --color-danger-bg: #fee2e2;
+  --color-danger: #ef4444;
+  --color-danger-strong: #b91c1c;
+  --color-danger-bg: #fef2f2;
   --color-danger-line: #fecaca;
+
+  /* Nombres semánticos heredados apuntan a esta paleta única. */
+  --color-error: var(--color-danger);
+  --color-secondary: var(--color-accent-soft);
+  --color-bg-main: var(--color-bg);
+  --color-bg-card: var(--color-surface);
+  --color-border: var(--color-line);
+  --color-text-main: var(--color-ink);
+  --color-text-sec: var(--color-ink-soft);
+  --color-disabled: #cbd5e1;
+  --color-overlay: rgba(15, 23, 42, 0.48);
+  --color-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --color-sidebar-active: rgba(24, 166, 160, 0.2);
+  --color-sidebar-indicator: #39d0c6;
+  --color-sidebar-focus: #6de0d8;
 
   /* ---- Tipografía ---- */
   --font-sans:
@@ -58,22 +101,50 @@
   --text-lg: 18px;
   --text-xl: 22px;
   --text-2xl: 28px;
+  --text-3xl: 34px;
+  --text-page-title: clamp(24px, 2vw, 30px);
+  --text-section-title: clamp(18px, 1.5vw, 22px);
+  --text-card-title: 16px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
 
   /* ---- Espaciado (múltiplos de 4px) ---- */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
 
-  /* ---- Radio de borde (único, no arbitrario por pantalla) ---- */
+  /* ---- Radio de borde (uniforme) ---- */
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
 
-  /* ---- Elevación: reservada a overlays reales (modal, dropdown) ---- */
-  --shadow-overlay: 0 8px 24px rgba(15, 31, 61, 0.16);
-  --shadow-focus: 0 0 0 3px rgba(23, 49, 94, 0.18);
+  /* Controles, tablas y superficies compartidas. */
+  --control-height: 40px;
+  --control-height-sm: 34px;
+  --control-radius: var(--radius-md);
+  --surface-radius: var(--radius-lg);
+  --surface-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.035);
+  --table-header-bg: #f1f5f9;
+  --table-header-ink: #536578;
+  --table-row-hover: #f8fbfc;
+  --control-border: #d7e0e8;
+  --control-placeholder: #8998a7;
+  --control-disabled-bg: #f5f7f9;
+
+  /* ---- Elevación: discreta. Overlays reales y tarjetas apenas elevadas ---- */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-raised: 0 2px 8px rgba(16, 24, 40, 0.06);
+  --shadow-overlay: 0 12px 32px rgba(15, 31, 61, 0.18);
+  --shadow-focus: 0 0 0 3px rgba(24, 166, 160, 0.28);
+  --shadow-danger-focus: 0 0 0 3px rgba(239, 68, 68, 0.16);
+
+  /* ---- Layout del shell ---- */
+  --shell-sidebar-width: 244px;
 }

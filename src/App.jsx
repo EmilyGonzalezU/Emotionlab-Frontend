@@ -1,31 +1,31 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 
-import Actualizacion from "./pages/Actualizacion/Actualizacion";
 import { useElectronUpdater } from "./hooks/useElectronUpdater";
 
 import Alertas from "./components/alertas.jsx";
 import RutaProtegida from "./components/rutaProtegida.jsx";
-import ForgotPassword from "./components/forgotPassword.jsx";
-import ResetPassword from "./pages/resetPassword.jsx";
+import { SkeletonPage } from "./ui/LoadingState.jsx";
 
-// ADMIN
-import Login from "./pages/login.jsx";
-import MenuAdmin from "./pages/vista_admin/menu_admin.jsx";
-import HomeAdmin from "./pages/vista_admin/home_admin.jsx";
-import ListaEspecialistas from "./pages/vista_admin/visualizadores_admin.jsx";
-import CrearEspecialista from "./pages/vista_admin/creacion_visor.jsx";
-import CuentaAdmin from "./pages/vista_admin/cuenta_admin.jsx";
-import SolicitudesAdmin from "./pages/vista_admin/solicitudes_admin.jsx";
-import AuditLogs from "./pages/vista_admin/auditLogs.jsx";
-
-// TEACHER / ESPECIALISTA
-import MenuEspecialista from "./pages/vista_visor/menu_visor.jsx";
-import HomeEspecialista from "./pages/vista_visor/home_visor.jsx";
-import CuentaEspecialista from "./pages/vista_visor/cuenta_visor.jsx";
-import SesionesEspecialista from "./pages/vista_visor/sesiones_visor.jsx";
-import SesionDetalle from "./pages/vista_visor/sesion_detalle.jsx";
-import SolicitudesEspecialista from "./pages/vista_visor/solicitudes_visor.jsx";
+const Actualizacion = lazy(() => import("./pages/Actualizacion/Actualizacion"));
+const ForgotPassword = lazy(() => import("./components/forgotPassword.jsx"));
+const ResetPassword = lazy(() => import("./pages/resetPassword.jsx"));
+const Login = lazy(() => import("./pages/login.jsx"));
+const MenuAdmin = lazy(() => import("./pages/vista_admin/menu_admin.jsx"));
+const HomeAdmin = lazy(() => import("./pages/vista_admin/home_admin.jsx"));
+const ListaEspecialistas = lazy(() => import("./pages/vista_admin/visualizadores_admin.jsx"));
+const CrearEspecialista = lazy(() => import("./pages/vista_admin/creacion_visor.jsx"));
+const CuentaAdmin = lazy(() => import("./pages/vista_admin/cuenta_admin.jsx"));
+const SolicitudesAdmin = lazy(() => import("./pages/vista_admin/solicitudes_admin.jsx"));
+const AuditLogs = lazy(() => import("./pages/vista_admin/auditLogs.jsx"));
+const MenuEspecialista = lazy(() => import("./pages/vista_visor/menu_visor.jsx"));
+const HomeEspecialista = lazy(() => import("./pages/vista_visor/home_visor.jsx"));
+const CuentaEspecialista = lazy(() => import("./pages/vista_visor/cuenta_visor.jsx"));
+const SesionesEspecialista = lazy(() => import("./pages/vista_visor/sesiones_visor.jsx"));
+const SesionDetalle = lazy(() => import("./pages/vista_visor/sesion_detalle.jsx"));
+const SolicitudesEspecialista = lazy(() => import("./pages/vista_visor/solicitudes_visor.jsx"));
+const TrackingsPage = lazy(() => import("./features/trackings/TrackingsPage.jsx"));
+const TrackingInspectPage = lazy(() => import("./features/trackings/TrackingInspectPage.jsx"));
 
 function App() {
   /*
@@ -77,6 +77,7 @@ function App() {
   return (
     <>
       <HashRouter>
+        <Suspense fallback={<SkeletonPage variant="dashboard" label="Cargando vista" />}>
         <Routes>
           {/* ==================================================
               LOGIN
@@ -168,6 +169,13 @@ function App() {
             />
 
             <Route
+              path="experiencias"
+              element={<TrackingsPage />}
+            />
+            <Route path="experiencias/:trackingId" element={<TrackingInspectPage />} />
+
+
+            <Route
               path="solicitudes"
               element={<SolicitudesEspecialista />}
             />
@@ -206,6 +214,12 @@ function App() {
             />
 
             <Route
+              path="experiencias"
+              element={<TrackingsPage />}
+            />
+            <Route path="experiencias/:trackingId" element={<TrackingInspectPage />} />
+
+            <Route
               path="solicitudes"
               element={<SolicitudesEspecialista />}
             />
@@ -216,6 +230,7 @@ function App() {
             />
           </Route>
         </Routes>
+        </Suspense>
       </HashRouter>
 
       <Alertas />

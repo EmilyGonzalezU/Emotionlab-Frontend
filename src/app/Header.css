@@ -1,52 +1,21 @@
 .el-shell-header {
-  height: 64px;
+  min-height: 66px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding: 0 var(--space-8);
-  background: var(--color-surface);
+  gap: 16px;
+  padding: 0 clamp(20px, 3vw, 40px);
+  background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid var(--color-line);
   position: sticky;
   top: 0;
   z-index: 50;
+  backdrop-filter: blur(12px);
 }
-
-.el-shell-header-section {
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: var(--color-ink);
-}
-
-.el-shell-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.el-shell-header-user {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  color: var(--color-ink-soft);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
-}
-
-.el-shell-header-user:hover {
-  background: var(--color-neutral-bg);
-  color: var(--color-ink);
-}
-
-.el-shell-header-user svg {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
+.el-shell-header-section { font-family: var(--font-sans); font-size: 17px; font-weight: 650; letter-spacing: -0.015em; color: var(--color-ink); }
+.el-shell-header-actions { display: flex; align-items: center; gap: 10px; }
+@media (max-width: 760px) {
+  .el-shell-header { position: static; min-height: 54px; padding: 0 16px; }
+  .el-shell-header-section { font-size: 15px; }
+  .el-shell-header-actions { gap: 6px; }
 }

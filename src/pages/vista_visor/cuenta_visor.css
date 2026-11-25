@@ -9,9 +9,9 @@
 
   margin: 0 auto;
 
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
 
-  color: #1e293b;
+  color: var(--color-ink);
 }
 
 /* --- CABECERA (Botón Volver + Título) --- */
@@ -33,7 +33,7 @@
 .cabecera-form h2 {
   margin: 0;
 
-  color: #17315e; /* Tu Azul Marino oficial */
+  color: var(--color-primary); /* Tu Azul Marino oficial */
 
   font-size: 24px;
 
@@ -49,7 +49,7 @@
 
   border: none;
 
-  color: #64748b;
+  color: var(--color-ink-soft);
 
   font-size: 15px;
 
@@ -67,9 +67,9 @@
 /* Efecto al pasar el mouse por encima del botón Volver */
 
 .btn-volver:hover {
-  background-color: #e2e8f0;
+  background-color: var(--color-neutral-bg);
 
-  color: #1e293b;
+  color: var(--color-ink);
 }
 
 /* --- LA TARJETA BLANCA DEL FORMULARIO --- */
@@ -79,13 +79,13 @@
    y los bordes redondeados (border-radius). */
 
 .tarjeta-form {
-  background-color: #ffffff;
+  background-color: var(--color-surface);
 
   padding: 30px;
 
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 /* --- LOS CAMPOS DE TEXTO (Inputs) --- */
@@ -105,7 +105,7 @@
 
   font-weight: 600;
 
-  color: #1e293b;
+  color: var(--color-ink);
 
   margin-bottom: 8px;
 }
@@ -116,15 +116,15 @@
 .grupo-input select {
   padding: 12px 16px;
 
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-line);
 
   border-radius: 8px;
 
   font-size: 15px;
 
-  color: #1e293b;
+  color: var(--color-ink);
 
-  background-color: #ffffff;
+  background-color: var(--color-surface);
 
   outline: none; /* Quita el borde negro feo que pone el navegador al hacer clic */
 
@@ -137,9 +137,9 @@
 
 .grupo-input input:focus,
 .grupo-input select:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-accent);
 
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: var(--shadow-focus);
 }
 
 /* --- BOTÓN DE GUARDAR --- */
@@ -149,9 +149,9 @@
 
   padding: 14px;
 
-  background-color: #17315e; /* Azul Marino oficial */
+  background-color: var(--color-accent); /* Acción principal destacada */
 
-  color: #ffffff;
+  color: var(--color-surface);
 
   border: none;
 
@@ -167,7 +167,7 @@
 
   margin-top: 10px;
 
-  box-shadow: 0 4px 6px rgba(23, 49, 94, 0.2);
+  box-shadow: var(--shadow-raised);
 }
 
 /* :not(:disabled) asegura que el botón SOLO cambie a un azul más oscuro al pasar el mouse
@@ -175,7 +175,7 @@
    SI es que está habilitado. Si está bloqueado, no hace este efecto. */
 
 .btn-guardar:hover:not(:disabled) {
-  background-color: #102548;
+  background-color: var(--color-accent-strong);
 }
 
 /* Pseudo-clase :disabled -> Se activa cuando React pone 'cargando: true'.
@@ -183,7 +183,7 @@
    Se pone gris y el cursor cambia al símbolo de "prohibido" (not-allowed). */
 
 .btn-guardar:disabled {
-  background-color: #94a3b8;
+  background-color: var(--color-ink-faint);
 
   cursor: not-allowed;
 }
@@ -205,19 +205,19 @@
 /* Variante de éxito (Verde) */
 
 .alerta.exito {
-  background-color: #dcfce7;
+  background-color: var(--color-success-bg);
 
-  color: #22c55e;
+  color: var(--color-success-strong);
 
-  border: 1px solid #22c55e;
+  border: 1px solid var(--color-success-line);
 }
 
 /* Variante de error (Rojo) */
 
 .alerta.error {
-  background-color: #fee2e2;
+  background-color: var(--color-danger-bg);
 
-  color: #ef4444;
+  color: var(--color-danger-strong);
 
-  border: 1px solid #ef4444;
+  border: 1px solid var(--color-danger-line);
 }

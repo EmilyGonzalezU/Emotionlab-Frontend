@@ -1,4 +1,4 @@
-import { FiHome, FiUsers, FiFileText, FiClipboard, FiUser } from "react-icons/fi";
+import { FiHome, FiUsers, FiFileText, FiClipboard, FiUser, FiLayers } from "react-icons/fi";
 
 /**
  * Fuente única de la navegación por rol. Reemplaza la duplicación
@@ -19,6 +19,7 @@ export const NAV_BY_ROLE = {
   teacher: [
     { to: "/teacher", label: "Inicio", end: true, icon: FiHome },
     { to: "/teacher/sesiones", label: "Sesiones", icon: FiClipboard },
+    { to: "/teacher/experiencias", label: "Colecciones", icon: FiLayers },
     { to: "/teacher/solicitudes", label: "Solicitudes", icon: FiFileText },
     { to: "/teacher/cuenta", label: "Cuenta", icon: FiUser },
   ],

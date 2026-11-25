@@ -1,48 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FiArrowLeft,
-  FiFileText,
-  FiClock,
-  FiCheckCircle,
-  FiSearch,
-  FiUser,
-  FiDownload,
   FiRefreshCw,
-  FiAlertTriangle,
 } from "react-icons/fi";
 
 import PageHeader from "../../ui/PageHeader.jsx";
 import Button from "../../ui/Button.jsx";
 import Badge from "../../ui/Badge.jsx";
-import Modal from "../../ui/Modal.jsx";
 import EmptyState from "../../ui/EmptyState.jsx";
-import { SkeletonRows } from "../../ui/LoadingState.jsx";
-
-import { api } from "../../lib/apiClient.js";
+import { SkeletonPage } from "../../ui/LoadingState.jsx";
 
 import { useSessionDetail } from "./useSessions.js";
 
-import {
-  AVISO_IA,
-} from "./predictionHelpers.js";
-
 import AiResultCard from "./AiResultCard.jsx";
+import { isV8Model } from "./sessionModelDisplay.js";
 
-import {
-  useCreateReportRequest,
-  useMyReportRequests,
-  useReportDownloadUrl,
-} from "../reports/useReports.js";
-
-import ReportRequestDialog from "../reports/ReportRequestDialog.jsx";
-
-import {
-  obtenerEtiquetaSolicitud,
-  obtenerSolicitudRelevante,
-} from "../reports/reportHelpers.js";
+import { formatChileInstant, getExperiencePayloads, getResponsesForDisplay } from "./sessionDisplay.js";
+import { chronologicalEvents, describeSessionEvent, formatElapsed, groupOriginalResponses, nonPersonalOriginalResponses } from "./sessionDetailHelpers.js";
 
 import "./SessionDetail.css";
+
+function respuestaOriginalLabel(response) {
+  if (response?._displayRespuestaLabel !== undefined) return response._displayRespuestaLabel;
+  const value = response?.respuestaLabel ?? response?.respuesta ?? response?.answer ?? response?.valor;
+  if (value === null || value === undefined || value === "") return "Sin respuesta";
+  return typeof value === "object" ? JSON.stringify(value) : String(value);
+}
 
 export default function SessionDetail() {
   const { id } = useParams();
@@ -60,95 +44,24 @@ export default function SessionDetail() {
   } = useSessionDetail(id);
 
   // =========================================================
-  // REPORTES
-  // =========================================================
-
-  const {
-    data: solicitudesData,
-    refetch: refetchSolicitudes,
-  } = useMyReportRequests();
-
-  const crearSolicitud = useCreateReportRequest();
-  const pedirUrlDescarga = useReportDownloadUrl();
-
-  // =========================================================
   // ESTADOS DE UI
   // =========================================================
 
   const [refrescando, setRefrescando] = useState(false);
 
-  const [aviso, setAviso] = useState(null);
-
-  const [formatoAConfirmar, setFormatoAConfirmar] =
-    useState(null);
-
-  // =========================================================
-  // PARTICIPANTES
-  // =========================================================
-
-  const [busquedaParticipante, setBusquedaParticipante] =
-    useState("");
-
-  const [participantes, setParticipantes] = useState([]);
-
-  const [buscandoParticipantes, setBuscandoParticipantes] =
-    useState(false);
-
-  const [mostrarParticipantes, setMostrarParticipantes] =
-    useState(false);
-
-  const [participantId, setParticipantId] =
-    useState("");
-
-  const [nombreParticipante, setNombreParticipante] =
-    useState("");
-
-  const [guardandoParticipante, setGuardandoParticipante] =
-    useState(false);
-
-  const [errorParticipante, setErrorParticipante] =
-    useState("");
-
   // =========================================================
   // DATOS DE LA SESIÓN
   // =========================================================
 
+  const modelProcessing = sesionData?.model_processing || sesionData?.raw_data?.model_processing || {};
   const rawData = sesionData?.raw_data || {};
-  const sessionData = rawData?.session_data || {};
-
-  const respuestas = sessionData?.respuestas || [];
-  const eventos = sessionData?.eventos || [];
-
-  const nombreAlumno =
-    sesionData?.nombre ||
-    sessionData?.nombre ||
-    sessionData?.student_name ||
-    "Sin especificar";
-
-  const edadAlumno =
-    sesionData?.edad ||
-    sessionData?.edad ||
-    sessionData?.age
-      ? `${
-          sesionData?.edad ||
-          sessionData?.edad ||
-          sessionData?.age
-        } años`
-      : "Sin registrar";
-
-  const cursoAlumno =
-    sesionData?.curso ||
-    sessionData?.curso ||
-    sessionData?.course ||
-    sessionData?.grade ||
-    "No asignado";
-
-  const generoAlumno =
-    sesionData?.genero ||
-    sessionData?.genero ||
-    sessionData?.gender ||
-    "Sin registrar";
-
+  const experiencePayloads = getExperiencePayloads(rawData);
+  const sessionData = experiencePayloads.reduce((merged, payload) => ({ ...merged, ...payload }), {});
+  const respuestasTodas = experiencePayloads.flatMap((payload) => Array.isArray(payload?.respuestas) ? payload.respuestas : []);
+  const respuestasParaVista = getResponsesForDisplay(rawData, modelProcessing);
+  const respuestasMostradas = nonPersonalOriginalResponses(respuestasParaVista);
+  const respuestasPorEtapa = groupOriginalResponses(respuestasMostradas);
+  const eventos = chronologicalEvents(experiencePayloads.flatMap((payload) => Array.isArray(payload?.eventos) ? payload.eventos : []));
   const idSesion =
     sesionData?.session_id || id;
 
@@ -157,103 +70,49 @@ export default function SessionDetail() {
     sessionData?.difficulty_level ||
     "No registrado";
 
+  // Edad y género declarados para la sesión: se leen de los datos del
+  // estudiante o de la respuesta original correspondiente.
+  const valorDeclarado = (ids) => {
+    const aceptados = new Set(ids.map((valor) => String(valor).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase()));
+    const encontrado = respuestasTodas.find((respuesta) => {
+      const identificador = String(respuesta?.idPregunta ?? respuesta?.id_pregunta ?? respuesta?.question_id ?? respuesta?.id ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+      return aceptados.has(identificador);
+    });
+    const valor = encontrado?.respuestaLabel ?? encontrado?.respuesta ?? encontrado?.answer ?? encontrado?.valor ?? encontrado?.value;
+    return valor === null || valor === undefined || valor === "" ? null : (typeof valor === "object" ? JSON.stringify(valor) : String(valor));
+  };
+
+  const edadRegistrada =
+    sesionData?.student_data?.edad ??
+    sesionData?.edad ??
+    sessionData?.edad ??
+    valorDeclarado(["edad", "age", "student_age"]);
+
+  const generoRegistrado =
+    sesionData?.student_data?.genero ||
+    sesionData?.genero ||
+    sesionData?.gender ||
+    sessionData?.genero ||
+    sessionData?.gender ||
+    valorDeclarado(["genero", "género", "gender", "student_gender"]) ||
+    "";
+
   const inicioSesion =
+    formatChileInstant(sesionData?.capture_started_at) ||
+    formatChileInstant(sessionData?.fechaInicio) ||
     sessionData?.fechaInicio ||
     `${sesionData?.fecha || ""} ${
       sesionData?.hora || ""
     }`.trim() ||
     "Sin registro";
 
-  const finSesion =
-    sessionData?.fechaFin ||
-    "En curso / Sin registro";
-
-  // =========================================================
-  // PARTICIPANTE INICIAL
-  // =========================================================
-
-  useEffect(() => {
-    const idExistente =
-      sesionData?.participant_id ||
-      sessionData?.participant_id ||
-      sessionData?.idParticipante ||
-      "";
-
-    const nombreExistente =
-      sesionData?.participant_name ||
-      sessionData?.participant_name ||
-      sessionData?.participant?.nombre ||
-      "";
-
-    if (idExistente) {
-      setParticipantId(idExistente);
-    }
-
-    if (nombreExistente) {
-      setNombreParticipante(nombreExistente);
-    }
-  }, [sesionData]);
-
-  // =========================================================
-  // SOLICITUDES
-  // =========================================================
-
-  const solicitudes = solicitudesData?.items || [];
-
-  const deEstaSesion = useMemo(() => {
-    return solicitudes.filter(
-      (s) =>
-        String(
-          s?.session_id ||
-            s?.sessionId ||
-            ""
-        ) === String(idSesion)
-    );
-  }, [solicitudes, idSesion]);
-
-  /*
-   * IMPORTANTE:
-   *
-   * Antes:
-   *
-   * obtenerSolicitudRelevante(deEstaSesion, "PDF")
-   *
-   * Ahora:
-   *
-   * se busca la solicitud real sin depender de motivo.
-   */
-
-  const solicitud = useMemo(
-    () =>
-      obtenerSolicitudRelevante(deEstaSesion),
-    [deEstaSesion]
-  );
-
-  const estadoSolicitud = String(
-    solicitud?.status || ""
-  ).toUpperCase();
-
-  const etiquetaSolicitud =
-    obtenerEtiquetaSolicitud(solicitud);
-
-  // =========================================================
-  // ACTUALIZAR AUTOMÁTICAMENTE APPROVED -> COMPLETED
-  // =========================================================
-
-  useEffect(() => {
-    if (estadoSolicitud !== "APPROVED") {
-      return undefined;
-    }
-
-    const intervalo = setInterval(() => {
-      refetchSolicitudes();
-    }, 2000);
-
-    return () => clearInterval(intervalo);
-  }, [
-    estadoSolicitud,
-    refetchSolicitudes,
-  ]);
+  const finTimestamp = sesionData?.capture_ended_at || sesionData?.capture_finished_at || sessionData?.fechaFin;
+  const finSesion = formatChileInstant(finTimestamp) || finTimestamp || "Sin registrar";
+  const inicioTimestamp = sesionData?.capture_started_at || sessionData?.fechaInicio;
+  const duracionSesion = formatElapsed(inicioTimestamp, finTimestamp);
+  const estadoSesion = String(sesionData?.status || sesionData?.estado || "").toLowerCase();
+  const etiquetasEstado = { completed: "Completada", identified: "Completada", identificada: "Completada", captured: "Completada", capturing: "En proceso", finalizing: "En proceso", importing: "En proceso", imported: "Incompleta", pending_assignment: "Incompleta", pendiente_identificacion: "Incompleta", capture_import_error: "Error de procesamiento", import_error: "Error de procesamiento", processing_error: "Error de procesamiento" };
+  const estadoSesionLabel = etiquetasEstado[estadoSesion] || "Sin registrar";
 
   // =========================================================
   // ACTUALIZAR MANUALMENTE (BOTÓN REFRESCAR)
@@ -262,489 +121,24 @@ export default function SessionDetail() {
   const handleRefrescar = async () => {
     setRefrescando(true);
     try {
-      await Promise.all([refetchSesion(), refetchSolicitudes()]);
+      await refetchSesion();
     } finally {
       setRefrescando(false);
     }
   };
 
   // =========================================================
-  // BUSCAR PARTICIPANTES
+  // RESULTADO DEL MODELO
   // =========================================================
 
-  const buscarParticipantes = async () => {
-    const texto =
-      busquedaParticipante.trim();
 
-    if (!texto) {
-      setParticipantes([]);
-      setMostrarParticipantes(false);
-      return;
-    }
-
-    try {
-      setBuscandoParticipantes(true);
-      setErrorParticipante("");
-
-      const data = await api.get(
-        `/participants/search?name=${encodeURIComponent(
-          texto
-        )}`
-      );
-
-      const lista = Array.isArray(data)
-        ? data
-        : data?.participants ||
-          data?.items ||
-          data?.data ||
-          [];
-
-      setParticipantes(lista);
-      setMostrarParticipantes(true);
-    } catch (error) {
-      console.error(
-        "Error buscando participantes:",
-        error
-      );
-
-      setErrorParticipante(
-        error?.message ||
-          "No se pudieron buscar los participantes."
-      );
-    } finally {
-      setBuscandoParticipantes(false);
-    }
-  };
-
-  useEffect(() => {
-    const texto =
-      busquedaParticipante.trim();
-
-    if (!texto) {
-      setParticipantes([]);
-      setMostrarParticipantes(false);
-      return;
-    }
-
-    const timer = setTimeout(
-      buscarParticipantes,
-      350
-    );
-
-    return () =>
-      clearTimeout(timer);
-  }, [busquedaParticipante]);
-
-  // =========================================================
-  // SELECCIONAR PARTICIPANTE
-  // =========================================================
-
-  const seleccionarParticipante = (
-    participante
-  ) => {
-    const idSeleccionado =
-      participante?.participant_id ||
-      participante?.id ||
-      "";
-
-    const nombreSeleccionado =
-      participante?.nombre ||
-      participante?.name ||
-      participante?.nombre_completo ||
-      "";
-
-    setParticipantId(idSeleccionado);
-    setNombreParticipante(nombreSeleccionado);
-
-    setBusquedaParticipante("");
-    setParticipantes([]);
-    setMostrarParticipantes(false);
-
-    setErrorParticipante("");
-  };
-
-  // =========================================================
-  // GUARDAR PARTICIPANTE
-  // =========================================================
-
-  const guardarParticipante = async () => {
-    const nombre =
-      nombreParticipante.trim();
-
-    if (!nombre) {
-      setErrorParticipante(
-        "Debes ingresar el nombre del participante."
-      );
-      return;
-    }
-
-    try {
-      setGuardandoParticipante(true);
-      setErrorParticipante("");
-
-      let idFinal = participantId;
-
-      // -----------------------------------------------------
-      // CREAR PARTICIPANTE
-      // -----------------------------------------------------
-
-      if (!idFinal) {
-        const creado = await api.post(
-          "/participants",
-          {
-            nombre,
-          }
-        );
-
-        idFinal =
-          creado?.participant_id ||
-          creado?.id ||
-          creado?.participant
-            ?.participant_id ||
-          "";
-
-        if (!idFinal) {
-          throw new Error(
-            "El servidor no devolvió el ID del participante."
-          );
-        }
-      }
-
-      // -----------------------------------------------------
-      // ASIGNAR A LA SESIÓN
-      // -----------------------------------------------------
-
-      await api.patch(
-        `/sessions/${idSesion}`,
-        {
-          participant_id: idFinal,
-        }
-      );
-
-      // -----------------------------------------------------
-      // ACTUALIZAR NOMBRE
-      // -----------------------------------------------------
-
-      try {
-        await api.patch(
-          `/sessions/${idSesion}/name`,
-          {
-            nombre,
-          }
-        );
-      } catch (errorNombreSesion) {
-        console.warn(
-          "No se pudo actualizar el nombre:",
-          errorNombreSesion
-        );
-      }
-
-      setParticipantId(idFinal);
-
-      await refetchSesion();
-
-      setAviso({
-        mensaje: `Participante asignado correctamente. ID: ${idFinal}`,
-        tipo: "ok",
-      });
-    } catch (error) {
-      console.error(
-        "Error guardando participante:",
-        error
-      );
-
-      setErrorParticipante(
-        error?.message ||
-          "No se pudo guardar el participante."
-      );
-    } finally {
-      setGuardandoParticipante(false);
-    }
-  };
-
-  // =========================================================
-  // RESULTADO IA
-  // =========================================================
-
-  /*
-   * Protección adicional:
-   *
-   * Si resultadoIA.resultado llega como objeto,
-   * extraemos bienestar para que React nunca
-   * intente renderizar directamente el objeto.
-   */
-
-  // =========================================================
-  // REPORTE
-  // =========================================================
-
-  const formatearFechaSiExiste = (iso) => {
-    if (!iso) return "";
-    try {
-      return new Date(iso).toLocaleDateString("es-CL", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "";
-    }
-  };
-
-  const volverADescargarReporte = (idSolicitud) => {
-    if (!idSolicitud) {
-      setAviso({
-        mensaje:
-          "No se encontró un identificador válido para descargar el reporte.",
-        tipo: "pendiente",
-      });
-      return;
-    }
-
-    pedirUrlDescarga.mutate(idSolicitud, {
-      onSuccess: (data) => {
-        const url = data?.download_url || data?.url;
-        if (!url) {
-          setAviso({
-            mensaje:
-              "El reporte fue generado, pero el servidor no devolvió un enlace de descarga válido.",
-            tipo: "pendiente",
-          });
-          return;
-        }
-        window.open(url, "_blank", "noopener,noreferrer");
-        setAviso(null);
-      },
-      onError: (error) => {
-        setAviso({
-          mensaje:
-            error?.message ||
-            "No se pudo obtener el enlace de descarga del reporte.",
-          tipo: "pendiente",
-        });
-      },
-    });
-  };
-
-  const volverASolicitarReporte = () => {
-    setAviso(null);
-    setFormatoAConfirmar("pdf");
-  };
-
-  const handleAccionReporte = () => {
-    setAviso(null);
-
-    // -------------------------------------------------------
-    // NO EXISTE SOLICITUD
-    // -------------------------------------------------------
-
-    if (!solicitud) {
-      setFormatoAConfirmar("pdf");
-      return;
-    }
-
-    // -------------------------------------------------------
-    // PENDING
-    // -------------------------------------------------------
-
-    if (
-      estadoSolicitud === "PENDING"
-    ) {
-      setAviso({
-        mensaje:
-          "Tu solicitud de reporte sigue pendiente de aprobación por el administrador.",
-        tipo: "pendiente",
-      });
-
-      return;
-    }
-
-    // -------------------------------------------------------
-    // APPROVED
-    // -------------------------------------------------------
-
-    if (
-      estadoSolicitud === "APPROVED"
-    ) {
-      setAviso({
-        mensaje:
-          "Tu solicitud fue aprobada. El reporte oficial se está generando; podrás descargarlo cuando esté listo.",
-        tipo: "pendiente",
-      });
-
-      return;
-    }
-
-    // -------------------------------------------------------
-    // COMPLETED
-    // -------------------------------------------------------
-
-    if (
-      estadoSolicitud === "COMPLETED"
-    ) {
-      const idSolicitud =
-        solicitud?.report_request_id ||
-        solicitud?.request_id ||
-        solicitud?.id;
-
-      if (!idSolicitud) {
-        setAviso({
-          mensaje:
-            "El reporte está completado, pero no se encontró un identificador válido para descargarlo.",
-          tipo: "pendiente",
-        });
-
-        return;
-      }
-
-      // Si ya fue descargado (downloaded_at existe), mostramos
-      // el aviso con DOS opciones: volver a descargar o
-      // volver a solicitar.
-      if (solicitud.downloaded_at) {
-        const fechaDescarga =
-          formatearFechaSiExiste(solicitud.downloaded_at);
-
-        setAviso({
-          mensaje: fechaDescarga
-            ? `El reporte ya fue generado y descargado el ${fechaDescarga}. ¿Qué deseas hacer?`
-            : "El reporte ya fue generado y descargado anteriormente. ¿Qué deseas hacer?",
-          tipo: "ok",
-          esReporteDescargado: true,
-          idSolicitudDescarga: idSolicitud,
-        });
-
-        return;
-      }
-
-      pedirUrlDescarga.mutate(
-        idSolicitud,
-        {
-          onSuccess: (data) => {
-            const url =
-              data?.download_url ||
-              data?.url;
-
-            if (!url) {
-              setAviso({
-                mensaje:
-                  "El reporte fue generado, pero el servidor no devolvió un enlace de descarga válido.",
-                tipo: "pendiente",
-              });
-
-              return;
-            }
-
-            window.open(
-              url,
-              "_blank",
-              "noopener,noreferrer"
-            );
-          },
-
-          onError: (error) => {
-            setAviso({
-              mensaje:
-                error?.message ||
-                "No se pudo obtener el enlace de descarga del reporte.",
-              tipo: "pendiente",
-            });
-          },
-        }
-      );
-
-      return;
-    }
-
-    // -------------------------------------------------------
-    // REJECTED
-    // -------------------------------------------------------
-
-    if (
-      estadoSolicitud === "REJECTED"
-    ) {
-      setAviso({
-        mensaje:
-          solicitud?.reason ||
-          solicitud?.motivo_rechazo ||
-          "La solicitud de reporte fue rechazada por el administrador.",
-        tipo: "pendiente",
-      });
-
-      return;
-    }
-
-    // -------------------------------------------------------
-    // DESCONOCIDO
-    // -------------------------------------------------------
-
-    setAviso({
-      mensaje:
-        `La solicitud tiene un estado no reconocido: ${
-          solicitud?.status ||
-          "sin estado"
-        }.`,
-      tipo: "pendiente",
-    });
-  };
-
-  // =========================================================
-  // CONFIRMAR SOLICITUD
-  // =========================================================
-
-  const confirmarSolicitudReporte =
-    () => {
-      if (!formatoAConfirmar) {
-        return;
-      }
-
-      crearSolicitud.mutate(
-        {
-          sessionId: idSesion,
-          motivo:
-            formatoAConfirmar.toUpperCase(),
-        },
-        {
-          onSuccess: () => {
-            setFormatoAConfirmar(null);
-
-            refetchSolicitudes();
-
-            setAviso({
-              mensaje:
-                "Solicitud de reporte enviada al administrador exitosamente.",
-              tipo: "ok",
-            });
-          },
-
-          onError: (error) => {
-            setFormatoAConfirmar(null);
-
-            setAviso({
-              mensaje:
-                error?.message ||
-                "Hubo un error al comunicarse con el servidor.",
-              tipo: "pendiente",
-            });
-          },
-        }
-      );
-    };
 
   // =========================================================
   // CARGANDO
   // =========================================================
 
   if (isLoading) {
-    return (
-      <div className="el-session-detail">
-        <SkeletonRows
-          rows={8}
-          columns={2}
-        />
-      </div>
-    );
+    return <SkeletonPage variant="detail" showHeader={false} label="Cargando detalle de la sesión" />;
   }
 
   // =========================================================
@@ -810,21 +204,6 @@ export default function SessionDetail() {
             >
               Actualizar
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={FiFileText}
-              onClick={handleAccionReporte}
-              disabled={
-                crearSolicitud.isPending ||
-                pedirUrlDescarga.isPending
-              }
-              title={etiquetaSolicitud}
-            >
-              {pedirUrlDescarga.isPending
-                ? "Preparando descarga..."
-                : etiquetaSolicitud}
-            </Button>
           </div>
         }
       />
@@ -833,63 +212,49 @@ export default function SessionDetail() {
       {/* GRID                                               */}
       {/* ================================================== */}
 
+      {sesionData?.import_status === "no_data" && (
+        <p role="status" className="el-session-detail-notice">
+          La captura se cerró, pero no hay registros asociados de los lentes. Las respuestas y eventos no están disponibles.
+        </p>
+      )}
+      {sesionData?.import_status === "error" && (
+        <p role="alert" className="el-session-detail-notice">
+          No se pudieron importar los registros de los lentes. La sesión y su identificador se conservaron.
+        </p>
+      )}
+
       <div className="el-session-detail-grid">
 
         {/* ================================================= */}
-        {/* DATOS DEL ALUMNO                                  */}
+        {/* DATOS ANONIMIZADOS DE LA EXPERIENCIA              */}
         {/* ================================================= */}
 
         <section className="el-session-detail-card">
 
           <h3 className="el-session-detail-card-title">
-            Datos del alumno y la sesión
+            Datos de la experiencia
           </h3>
 
           <div className="el-session-detail-facts">
 
-            {/* NOMBRE */}
-
-            <div className="el-session-detail-fact el-session-detail-fact-name">
-
-              <div className="el-session-detail-fact-label-row">
-
-                <span>
-                  Nombre del alumno
-                </span>
-
-              </div>
-
-              <span className="el-session-detail-fact-value">
-                {nombreAlumno}
-              </span>
-
-            </div>
-
             <div className="el-session-detail-fact">
-              <span>Curso</span>
+              <span>ID de sesión</span>
               <span className="el-session-detail-fact-value">
-                {cursoAlumno}
+                {idSesion}
               </span>
             </div>
 
             <div className="el-session-detail-fact">
               <span>Edad</span>
               <span className="el-session-detail-fact-value">
-                {edadAlumno}
+                {edadRegistrada ?? "Sin registrar"}
               </span>
             </div>
 
             <div className="el-session-detail-fact">
               <span>Género</span>
               <span className="el-session-detail-fact-value">
-                {generoAlumno}
-              </span>
-            </div>
-
-            <div className="el-session-detail-fact">
-              <span>ID de sesión</span>
-              <span className="el-session-detail-fact-value">
-                {idSesion}
+                {generoRegistrado || "Sin registrar"}
               </span>
             </div>
 
@@ -914,273 +279,28 @@ export default function SessionDetail() {
               </span>
             </div>
 
-          </div>
-
-        </section>
-
-        {/* ================================================= */}
-        {/* PARTICIPANTE                                     */}
-        {/* ================================================= */}
-
-        <section className="el-session-detail-card">
-
-          <h3 className="el-session-detail-card-title">
-            Participante
-          </h3>
-
-          <div className="el-session-detail-facts">
-
-            {/* ID */}
-
-            <div className="el-session-detail-fact">
-
-              <div className="el-session-detail-fact-label-row">
-
-                <FiUser />
-
-                <span>
-                  ID anonimizado
-                </span>
-
-              </div>
-
-              <span className="el-session-detail-fact-value">
-                {participantId ||
-                  "Sin asignar"}
-              </span>
-
-            </div>
-
-            {/* NOMBRE */}
-
-            <div className="el-session-detail-fact">
-
-              <span>
-                Nombre
-              </span>
-
-              <span className="el-session-detail-fact-value">
-                {nombreParticipante ||
-                  "Sin asignar"}
-              </span>
-
-            </div>
-
-            {/* BUSCADOR */}
-
-            <div className="el-session-detail-fact el-session-detail-fact-name">
-
-              <span>
-                Buscar participante existente
-              </span>
-
-              <div
-                style={{
-                  position: "relative",
-                  marginTop: "6px",
-                }}
-              >
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-
-                  <FiSearch />
-
-                  <input
-                    type="text"
-                    value={
-                      busquedaParticipante
-                    }
-                    onChange={(e) =>
-                      setBusquedaParticipante(
-                        e.target.value
-                      )
-                    }
-                    placeholder="Escribe un nombre..."
-                    className="el-session-detail-edit-input"
-                    style={{
-                      width: "100%",
-                    }}
-                  />
-
-                </div>
-
-                {buscandoParticipantes && (
-                  <span className="el-session-detail-fact-error">
-                    Buscando...
-                  </span>
-                )}
-
-                {mostrarParticipantes &&
-                  participantes.length >
-                    0 && (
-
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        border:
-                          "1px solid var(--color-line)",
-                        borderRadius:
-                          "var(--radius-sm)",
-                        overflow: "hidden",
-                        background:
-                          "var(--color-surface)",
-                      }}
-                    >
-
-                      {participantes.map(
-                        (participante) => {
-
-                          const idP =
-                            participante?.participant_id ||
-                            participante?.id ||
-                            "";
-
-                          const nombreP =
-                            participante?.nombre ||
-                            participante?.name ||
-                            participante?.nombre_completo ||
-                            "Sin nombre";
-
-                          return (
-                            <button
-                              key={idP}
-                              type="button"
-                              onClick={() =>
-                                seleccionarParticipante(
-                                  participante
-                                )
-                              }
-                              style={{
-                                width: "100%",
-                                display:
-                                  "flex",
-                                flexDirection:
-                                  "column",
-                                alignItems:
-                                  "flex-start",
-                                gap: "2px",
-                                padding:
-                                  "10px 12px",
-                                border:
-                                  "none",
-                                borderBottom:
-                                  "1px solid var(--color-line-soft)",
-                                background:
-                                  "transparent",
-                                cursor:
-                                  "pointer",
-                                textAlign:
-                                  "left",
-                              }}
-                            >
-
-                              <strong>
-                                {nombreP}
-                              </strong>
-
-                              <small>
-                                ID: {idP}
-                              </small>
-
-                            </button>
-                          );
-                        }
-                      )}
-
-                    </div>
-                  )}
-
-              </div>
-
-            </div>
-
-            {/* NOMBRE NUEVO */}
-
-            <div className="el-session-detail-fact el-session-detail-fact-name">
-
-              <span>
-                Nombre para nuevo participante
-              </span>
-
-              <input
-                type="text"
-                value={
-                  nombreParticipante
-                }
-                onChange={(e) => {
-                  setNombreParticipante(
-                    e.target.value
-                  );
-                  setParticipantId("");
-                  setErrorParticipante("");
-                }}
-                placeholder="Nombre completo"
-                className="el-session-detail-edit-input"
-                style={{
-                  marginTop: "6px",
-                }}
-              />
-
-            </div>
-
-            {errorParticipante && (
-              <div className="el-session-detail-fact-error">
-                {errorParticipante}
-              </div>
-            )}
-
-            <div
-              style={{
-                gridColumn:
-                  "1 / -1",
-              }}
-            >
-
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={FiUser}
-                onClick={
-                  guardarParticipante
-                }
-                disabled={
-                  guardandoParticipante
-                }
-              >
-                {guardandoParticipante
-                  ? "Guardando..."
-                  : "Asignar participante"}
-              </Button>
-
-            </div>
+            <div className="el-session-detail-fact"><span>Duración</span><span className="el-session-detail-fact-value">{duracionSesion}</span></div>
+            <div className="el-session-detail-fact"><span>Estado de la sesión</span><span className="el-session-detail-fact-value">{estadoSesionLabel}</span></div>
 
           </div>
 
         </section>
 
+
         {/* ================================================= */}
-        {/* RESULTADO IA                                     */}
+        {/* RESULTADO DEL MODELO                                     */}
         {/* ================================================= */}
 
         <section className="el-session-detail-card">
 
           <h3 className="el-session-detail-card-title">
-            Resultado de IA
+            {isV8Model(modelProcessing) ? "Cálculo con IA" : "Resultado automatizado"}
           </h3>
 
           <AiResultCard
             sesionData={sesionData}
           />
 
-          <p className="el-session-detail-aviso">
-            {AVISO_IA}
-          </p>
 
         </section>
 
@@ -1191,17 +311,19 @@ export default function SessionDetail() {
         <section className="el-session-detail-card">
 
           <h3 className="el-session-detail-card-title">
-            Respuestas del alumno
+            Respuestas de la sesión
           </h3>
+          <p className="el-session-detail-answer-note">Se muestran los valores normalizados cuando corresponde. El registro original de Unity se conserva sin cambios.</p>
 
-          {respuestas.length > 0 ? (
-            <div className="el-session-detail-answers">
-
-              {respuestas.map(
-                (resp, index) => (
+          {respuestasMostradas.length > 0 ? (
+            <div className="el-session-detail-answer-stages">
+              {respuestasPorEtapa.map((stage) => <section className="el-session-detail-answer-stage" key={stage.id} aria-labelledby={`answer-stage-${stage.id}`}>
+                <h4 id={`answer-stage-${stage.id}`}>{stage.label}<span>{stage.responses.length} {stage.responses.length === 1 ? "respuesta" : "respuestas"}</span></h4>
+                <div className="el-session-detail-answers">
+                {stage.responses.map((resp) => (
 
                   <div
-                    key={index}
+                    key={resp._originalIndex}
                     className="el-session-detail-answer"
                   >
 
@@ -1212,21 +334,15 @@ export default function SessionDetail() {
                           resp.textoPregunta
                         }
                       >
-                        {resp.textoPregunta ||
-                          `Pregunta ${
-                            index + 1
-                          }`}
+                        {resp.textoPregunta || resp.pregunta || resp.question || "Pregunta sin registrar"}
                       </span>
 
-                      <Badge tone="neutral">
-                        #{index + 1}
-                      </Badge>
+                      {(resp.numeroPregunta ?? resp.numero_pregunta ?? resp.numero) != null && <Badge tone="neutral">#{resp.numeroPregunta ?? resp.numero_pregunta ?? resp.numero}</Badge>}
 
                     </div>
 
-                    <div className="el-session-detail-answer-value">
-                      {resp.respuestaLabel ||
-                        "Sin respuesta"}
+                    <div className={`el-session-detail-answer-value${resp._normalizacionFallida ? " is-normalization-error" : ""}`}>
+                      {respuestaOriginalLabel(resp)}
                     </div>
 
                     <div className="el-session-detail-answer-footer">
@@ -1238,18 +354,16 @@ export default function SessionDetail() {
                       </span>
 
                       <span>
-                        {resp.timestamp
-                          ?.split(" ")[1] ||
-                          ""}
+                        {formatChileInstant(resp.timestamp) || resp.timestamp || ""}
                       </span>
 
                     </div>
 
                   </div>
 
-                )
-              )}
-
+                ))}
+                </div>
+              </section>)}
             </div>
           ) : (
             <EmptyState
@@ -1285,11 +399,11 @@ export default function SessionDetail() {
                     </Badge>
 
                     <span className="el-session-detail-event-name">
-                      {evt.nombre}
+                      {describeSessionEvent(evt)}
                     </span>
 
                     <span className="el-session-detail-event-time">
-                      {evt.timestamp}
+                      {formatChileInstant(evt.timestamp) || evt.timestamp}
                     </span>
 
                   </div>
@@ -1307,92 +421,6 @@ export default function SessionDetail() {
         </section>
 
       </div>
-
-      {/* ================================================== */}
-      {/* AVISO                                              */}
-      {/* ================================================== */}
-
-      <Modal
-        open={Boolean(aviso)}
-        onClose={() => setAviso(null)}
-        title="Aviso"
-        footer={
-          aviso?.esReporteDescargado ? (
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  volverADescargarReporte(aviso?.idSolicitudDescarga)
-                }
-                loading={pedirUrlDescarga.isPending}
-              >
-                Volver a descargar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={volverASolicitarReporte}
-              >
-                Volver a solicitar
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={() =>
-                setAviso(null)
-              }
-            >
-              Entendido
-            </Button>
-          )
-        }
-      >
-
-        <p className="el-session-detail-aviso">
-
-          {aviso?.tipo ===
-          "pendiente" ? (
-            <FiClock
-              aria-hidden="true"
-            />
-          ) : (
-            <FiCheckCircle
-              aria-hidden="true"
-            />
-          )}
-
-          <span>
-            {aviso?.mensaje}
-          </span>
-
-        </p>
-
-      </Modal>
-
-      {/* ================================================== */}
-      {/* CONFIRMAR REPORTE                                  */}
-      {/* ================================================== */}
-
-      <ReportRequestDialog
-        open={Boolean(
-          formatoAConfirmar
-        )}
-        formato="PDF"
-        loading={
-          crearSolicitud.isPending
-        }
-        onConfirm={
-          confirmarSolicitudReporte
-        }
-        onCancel={() =>
-          setFormatoAConfirmar(null)
-        }
-      />
 
     </div>
   );

@@ -6,17 +6,9 @@ import EmptyState from "../../ui/EmptyState.jsx";
 import { SkeletonRows } from "../../ui/LoadingState.jsx";
 import ReportStatusBadge from "./ReportStatusBadge.jsx";
 import ReportReview from "./ReportReview.jsx";
-import { usePendingReportRequests, useUsersDirectory, useMyReportRequests } from "./useReports.js";
+import { formatChileInstant } from "../sessions/sessionDisplay.js";
+import { usePendingReportRequests, useUsersDirectory } from "./useReports.js";
 import "./ReportsList.css";
-
-function construirMapaUsuarios(usuarios) {
-  const mapa = {};
-  (usuarios || []).forEach((usr) => {
-    if (usr.uid && usr.nombre) mapa[usr.uid] = usr.nombre;
-    if (usr.email && usr.nombre) mapa[usr.email.toLowerCase()] = usr.nombre;
-  });
-  return mapa;
-}
 
 function fechaPrioridad(s) {
   if (!s) return "";
@@ -30,41 +22,9 @@ function fechaPrioridad(s) {
   );
 }
 
-// Extraído literalmente de la lógica ya validada en
-// pages/vista_admin/solicitudes_admin.jsx: cruza la solicitud con la
-// lista de usuarios por UID o correo y, si no hay coincidencia, arma
-// un nombre legible a partir del correo como último recurso.
-function obtenerNombreEspecialista(solicitud, mapaUsuarios) {
-  const uid = solicitud.requester_uid;
-  const email = (solicitud.requester_email || "").toLowerCase();
-
-  if (uid && mapaUsuarios[uid]) return mapaUsuarios[uid];
-  if (email && mapaUsuarios[email]) return mapaUsuarios[email];
-  if (solicitud.requester_name) return solicitud.requester_name;
-  if (!solicitud.requester_email) return "Especialista desconocido";
-
-  const parteLocal = solicitud.requester_email.split("@")[0];
-  return parteLocal.replace(/[._-]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
-}
-
-/**
- * Reemplaza pages/vista_admin/solicitudes_admin.jsx.
- *
- * Usa CSS propia y autocontenida en vez de reutilizar
- * visualizadores_admin.css: ese archivo lo sigue importando
- * pages/vista_admin/visualizadores_admin.jsx (pantalla "Visualizadores",
- * fuera de alcance de esta fase), así que no se toca ni se reutiliza
- * para no arriesgar esa pantalla — mismo criterio que se aplicó con
- * sesiones_visor.css en la Fase 3.
- *
- * Reemplaza también el patrón de "toast como confirmación" por
- * ConfirmationDialog (dentro de ReportReview) y elimina los emojis
- * ✅/❌ de las acciones.
- */
 export default function ReportsList() {
   const { data, isLoading, isError, refetch: refetchPending } = usePendingReportRequests();
-  const { refetch: refetchMine } = useMyReportRequests();
-  const { data: usuariosData } = useUsersDirectory();
+  const { data: usersData, isLoading: usersLoading } = useUsersDirectory();
   const [busqueda, setBusqueda] = useState("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
@@ -72,13 +32,12 @@ export default function ReportsList() {
   const handleRefrescar = async () => {
     setRefrescando(true);
     try {
-      await Promise.all([refetchPending(), refetchMine()]);
+      await refetchPending();
     } finally {
       setRefrescando(false);
     }
   };
 
-  const mapaUsuarios = useMemo(() => construirMapaUsuarios(usuariosData), [usuariosData]);
   const solicitudes = useMemo(() => {
     const raw = data?.items || [];
     return [...raw].sort((a, b) => {
@@ -91,25 +50,32 @@ export default function ReportsList() {
     });
   }, [data]);
 
+  const users = useMemo(() => Array.isArray(usersData) ? usersData : usersData?.items || [], [usersData]);
+  const nombresPorUid = useMemo(() => new Map(
+    users.map((user) => [
+      String(user.uid || user.user_id || user.id || ""),
+      user.nombre || user.name || "",
+    ]).filter(([uid, name]) => uid && name),
+  ), [users]);
+
   const solicitudesFiltradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
     if (!termino) return solicitudes;
 
     return solicitudes.filter((s) => {
-      const nombre = obtenerNombreEspecialista(s, mapaUsuarios).toLowerCase();
-      return (
-        (s.session_id || "").toLowerCase().includes(termino) ||
-        (s.requester_email || "").toLowerCase().includes(termino) ||
-        nombre.includes(termino)
-      );
+      return String(s.session_id || "").toLowerCase().includes(termino)
+        || String(s.tracking_code || "").toLowerCase().includes(termino)
+        || String(s.tracking_id || "").toLowerCase().includes(termino)
+        || String(s.requester_name || nombresPorUid.get(String(s.requester_uid || "")) || "").toLowerCase().includes(termino)
+        || String(s.requester_uid || "").toLowerCase().includes(termino);
     });
-  }, [busqueda, solicitudes, mapaUsuarios]);
+  }, [busqueda, solicitudes, nombresPorUid]);
 
   return (
-    <div className="el-reports-list">
+    <div className="el-reports-list el-admin-reports-list">
       <PageHeader
         title="Solicitudes de reportes"
-        description="Revisa el contexto de cada sesión y valida las solicitudes de reportes enviadas por los especialistas."
+        description="Revisa los metadatos de las solicitudes y registra una decisión sin acceder al contenido de las sesiones."
         actions={
           <Button
             variant="secondary"
@@ -128,7 +94,7 @@ export default function ReportsList() {
         <input
           type="text"
           className="el-reports-search-input"
-          placeholder="Buscar por sesión, nombre o correo"
+          placeholder="Buscar por sesión, seguimiento o especialista"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           aria-label="Buscar solicitudes de reportes"
@@ -154,61 +120,92 @@ export default function ReportsList() {
             }
           />
         ) : (
-          <div className="el-reports-table-scroll">
-            <table className="el-reports-table">
-              <thead>
-                <tr>
-                  <th>Sesión</th>
-                  <th>Especialista</th>
-                  <th>Formato</th>
-                  <th>Fecha de solicitud</th>
-                  <th>Estado</th>
-                  <th className="el-reports-table-col-actions">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {solicitudesFiltradas.map((solicitud) => {
-                  const idUnico = solicitud.request_id || solicitud.id;
-                  const nombre = obtenerNombreEspecialista(solicitud, mapaUsuarios);
-                  const fecha = solicitud.created_at
-                    ? new Date(solicitud.created_at).toLocaleDateString("es-CL")
-                    : "No disponible";
+          <>
+            <div className="el-admin-reports-table-heading">
+              <h2>Solicitudes pendientes</h2>
+              <span>
+                {busqueda
+                  ? `${solicitudesFiltradas.length} de ${solicitudes.length} solicitudes`
+                  : `${solicitudes.length} solicitudes`}
+              </span>
+            </div>
+            <div className="el-reports-table-scroll">
+              <table className="el-table el-reports-table el-admin-reports-table">
+                <colgroup>
+                  <col className="el-admin-col-request" />
+                  <col className="el-admin-col-specialist" />
+                  <col className="el-admin-col-date" />
+                  <col className="el-admin-col-status" />
+                  <col className="el-admin-col-action" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Solicitud</th>
+                    <th>Especialista solicitante</th>
+                    <th>Fecha de solicitud</th>
+                    <th>Estado</th>
+                    <th className="el-reports-table-col-actions">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {solicitudesFiltradas.map((solicitud, index) => {
+                    const idUnico = solicitud.request_id || solicitud.report_request_id || solicitud.id || `request-${index}`;
+                    const fechaSolicitud = solicitud.created_at || solicitud.requested_at;
+                    const fecha = fechaSolicitud ? formatChileInstant(fechaSolicitud) : "No disponible";
+                    const nombreEspecialista = solicitud.requester_name
+                      || nombresPorUid.get(String(solicitud.requester_uid || ""))
+                      || (usersLoading ? "Cargando nombre…" : "Nombre no disponible");
+                    const esSeguimiento = solicitud.report_type === "TRACKING";
+                    const recurso = esSeguimiento
+                      ? solicitud.tracking_code || solicitud.tracking_id
+                      : solicitud.session_id;
+                    const cantidadSesiones = Number(solicitud.session_count) || 0;
+                    const formato = String(solicitud.report_format || "PDF").toUpperCase() === "XLSX" ? "Excel" : "PDF";
+                    const motivo = esSeguimiento
+                      ? `${cantidadSesiones} ${cantidadSesiones === 1 ? "sesión asociada" : "sesiones asociadas"}`
+                      : solicitud.motivo || "Sin motivo indicado";
 
-                  return (
-                    <tr key={idUnico}>
-                      <td className="el-reports-table-id">{solicitud.session_id}</td>
-                      <td>
-                        <div className="el-reports-table-specialist">
-                          <span>{nombre}</span>
-                          <span className="el-reports-table-specialist-email">
-                            {solicitud.requester_email}
-                          </span>
-                        </div>
-                      </td>
-                      <td>{solicitud.motivo || "No disponible"}</td>
-                      <td>{fecha}</td>
-                      <td>
-                        <ReportStatusBadge status={solicitud.status} />
-                      </td>
-                      <td className="el-reports-table-col-actions">
-                        <Button variant="secondary" size="sm" onClick={() => setSolicitudSeleccionada(solicitud)}>
-                          Revisar
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr key={idUnico}>
+                        <td className="el-admin-request-cell" data-label="Solicitud">
+                          <div className="el-admin-request-resource">
+                            <span className={`el-admin-request-type${esSeguimiento ? " is-tracking" : ""}`}>
+                              {esSeguimiento ? "Seguimiento" : <>Informe de sesi&oacute;n</>}
+                            </span>
+                            <strong>{esSeguimiento ? `Informe ${formato}` : "Informe individual"}</strong>
+                            <code title={recurso || "ID no disponible"}>{recurso || "ID no disponible"}</code>
+                            <span className="el-admin-request-reason">{motivo}</span>
+                          </div>
+                        </td>
+                        <td data-label="Especialista solicitante">
+                          <div className="el-reports-table-specialist el-admin-specialist">
+                            <span className="el-admin-specialist-label">Especialista</span>
+                            <strong className="el-admin-specialist-name">{nombreEspecialista}</strong>
+                          </div>
+                        </td>
+                        <td data-label="Fecha de solicitud">
+                          <time dateTime={fechaSolicitud || undefined}>{fecha}</time>
+                        </td>
+                        <td data-label="Estado">
+                          <ReportStatusBadge status={solicitud.status} />
+                        </td>
+                        <td className="el-reports-table-col-actions" data-label="Acciones">
+                          <Button variant="secondary" size="sm" onClick={() => setSolicitudSeleccionada(solicitud)}>
+                            Revisar
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
       <ReportReview
         solicitud={solicitudSeleccionada}
-        nombreEspecialista={
-          solicitudSeleccionada ? obtenerNombreEspecialista(solicitudSeleccionada, mapaUsuarios) : ""
-        }
         onClose={() => setSolicitudSeleccionada(null)}
       />
     </div>

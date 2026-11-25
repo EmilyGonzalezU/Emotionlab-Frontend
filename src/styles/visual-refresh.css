@@ -1,0 +1,214 @@
+/* Shared visual rules for the specialist and administrator workspaces.
+   Page-specific styles keep layout and interaction; global tokens own
+   color, type, borders, control size, and surface treatment. */
+
+body {
+  color: var(--color-ink);
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+}
+
+main { min-width: 0; }
+main h1 { font-size: var(--text-page-title); line-height: var(--leading-tight); letter-spacing: -0.025em; }
+main h2 { font-size: var(--text-section-title); line-height: 1.3; letter-spacing: -0.015em; }
+main h3 { font-size: var(--text-card-title); line-height: 1.35; }
+main p { line-height: var(--leading-normal); }
+
+.el-route-loading {
+  display: grid;
+  min-height: 32vh;
+  place-items: center;
+  color: var(--color-ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* Shared button sizes and states. Variant colors remain defined by Button.css. */
+.el-btn {
+  min-height: var(--control-height);
+  padding-inline: 15px;
+  border-radius: var(--control-radius);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  letter-spacing: 0;
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease,
+    box-shadow 140ms ease, transform 140ms ease;
+}
+.el-btn-sm { min-height: var(--control-height-sm); padding-inline: 11px; font-size: var(--text-xs); }
+.el-btn:disabled { opacity: 0.56; cursor: not-allowed; }
+.el-btn:not(:disabled):active { transform: translateY(1px); }
+.el-btn-primary { background: var(--color-accent); }
+.el-btn-primary:not(:disabled):hover { background: var(--color-accent-strong); }
+.el-btn-danger { background: var(--color-danger); }
+.el-btn-danger:not(:disabled):hover { background: var(--color-danger-strong); }
+.el-btn-outline { border-color: var(--color-primary-soft-line); color: var(--color-primary); background: transparent; }
+.el-btn-outline:not(:disabled):hover { border-color: var(--color-primary); background: var(--color-primary-soft); }
+
+main button:not(.el-btn):not(.el-modal-close):not(.el-shell-profile),
+main [role="button"] {
+  font-family: var(--font-sans);
+  border-radius: var(--control-radius);
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease,
+    box-shadow 140ms ease, transform 140ms ease;
+}
+main button:not(:disabled):not(.el-btn):hover { filter: brightness(0.97); }
+main button:disabled { cursor: not-allowed; }
+
+/* Common form fields. Compound searches can keep their transparent borderless
+   input through their more specific local selectors. */
+main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+main select,
+main textarea {
+  min-height: var(--control-height);
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  padding: 9px 12px;
+  box-shadow: 0 1px 2px rgba(18, 38, 58, 0.025);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+main textarea { min-height: 96px; resize: vertical; }
+main input::placeholder, main textarea::placeholder { color: var(--control-placeholder); }
+main input:focus, main select:focus, main textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+main input:disabled, main select:disabled, main textarea:disabled {
+  background: var(--control-disabled-bg);
+  color: var(--color-ink-soft);
+}
+main input[type="checkbox"], main input[type="radio"] { accent-color: var(--color-accent-strong); }
+
+/* One table pattern for sessions, users, report requests, participants, and
+   administrative listings. Column layouts and row actions stay page-owned. */
+main table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+main .el-table { min-width: 680px; border-collapse: separate; border-spacing: 0; }
+main .el-table.el-users-table { min-width: 860px; }
+main .el-table thead th {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--table-header-bg);
+  color: var(--table-header-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-align: left;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+main .el-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-line-soft);
+  text-align: left;
+  vertical-align: middle;
+}
+main .el-table tbody tr { transition: background-color 120ms ease; }
+main .el-table tbody tr:hover > td { background: var(--table-row-hover); }
+main .el-table tbody tr:last-child > td { border-bottom: 0; }
+main .el-table thead th:first-child { border-top-left-radius: var(--radius-sm); }
+main .el-table thead th:last-child { border-top-right-radius: var(--radius-sm); }
+main thead th {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--table-header-bg);
+  color: var(--table-header-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-align: left;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+main tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-line-soft);
+  text-align: left;
+  vertical-align: middle;
+}
+main tbody tr { transition: background-color 120ms ease; }
+main tbody tr:hover > td { background: var(--table-row-hover); }
+main tbody tr:last-child > td { border-bottom: 0; }
+main :is(.el-reports-table, .el-users-table, .el-sessions-table) thead th:first-child { border-top-left-radius: var(--radius-sm); }
+main :is(.el-reports-table, .el-users-table, .el-sessions-table) thead th:last-child { border-top-right-radius: var(--radius-sm); }
+main :is(.table-container, .tabla-container, .table-wrapper, .tabla-wrapper,
+  .sessions-table-wrap, .reports-table-wrap, .el-reports-table-scroll,
+  .el-users-table-scroll, .el-trackings-table-wrap, .el-sessions-table-scroll,
+  .el-sessions-table-card) { max-width: 100%; overflow-x: auto; }
+
+/* Consistent raised surfaces without changing each card's content layout. */
+main :is(.el-reports-table-card, .el-users-table-card, .el-sessions-table-card,
+  .el-session-detail-card, .el-tracking-overview-card, .el-tracking-detail-section,
+  .el-tracking-detail-summary, .el-trackings-panel, .el-user-create-card,
+  .el-dashboard-chart-card, .dashboard-cards > article, .admin-stat-card,
+  .el-report-review-summary, .el-audit-card, .admin-panel) {
+  border-color: var(--color-line);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
+main :is(.el-page-header, .page-header, .page-title-row, .section-header) { gap: var(--space-4); }
+main :is(.el-empty-state, .empty-state, .loading-state) { border-radius: var(--surface-radius); }
+
+/* Shared semantic badges all keep text as well as color. */
+.el-badge { min-height: 24px; padding: 3px 10px; line-height: 1.3; }
+
+.el-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-line);
+  color: var(--color-ink-soft);
+  font-size: var(--text-sm);
+}
+.el-pagination .btn-paginacion {
+  min-height: var(--control-height-sm);
+  padding: 0 11px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--control-radius);
+  color: var(--color-primary);
+  background: var(--color-surface);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.el-pagination .btn-paginacion:not(:disabled):hover { border-color: var(--color-primary-soft-line); background: var(--color-primary-soft); }
+.el-pagination .btn-paginacion:disabled { border-color: var(--color-line); color: var(--color-ink-faint); opacity: .65; }
+.el-pagination :is(.el-sessions-pagination-info, .info-paginacion) { color: var(--color-ink-soft); font-size: var(--text-sm); }
+
+/* Keyboard focus remains clear on shared and legacy controls. */
+main button:focus-visible, main a:focus-visible, main input:focus-visible,
+main select:focus-visible, main textarea:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
+}
+
+@media (max-width: 960px) {
+  main :is(.table-container, .tabla-container, .table-wrapper, .tabla-wrapper,
+    .sessions-table-wrap, .reports-table-wrap, .el-reports-table-scroll,
+    .el-users-table-scroll, .el-trackings-table-wrap, .el-sessions-table-scroll) { overflow-x: auto; }
+}
+@media (max-width: 640px) {
+  .el-shell-header { padding-inline: 14px; }
+  .el-shell-main { padding: 14px; }
+  main thead th, main tbody td { padding: 10px; }
+  .el-btn { min-height: var(--control-height); }
+  .el-pagination { flex-wrap: wrap; justify-content: center; }
+  .el-my-requests-pagination { align-items: flex-start; flex-direction: column; }
+  .el-my-requests-pagination > div { width: 100%; justify-content: space-between; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

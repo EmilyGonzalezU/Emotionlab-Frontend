@@ -9,8 +9,10 @@
 
 .el-page-header-title {
   font-family: var(--font-sans);
-  font-size: var(--text-xl);
+  font-size: var(--text-page-title);
   font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.025em;
   color: var(--color-brand);
   margin: 0 0 4px;
 }

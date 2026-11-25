@@ -51,11 +51,16 @@ h6 {
 }
 
 a {
-  color: var(--color-brand);
+  color: var(--color-accent-strong);
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-primary);
 }
 
 button {

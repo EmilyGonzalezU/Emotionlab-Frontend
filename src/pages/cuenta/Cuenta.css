@@ -18,15 +18,16 @@
 .el-cuenta-panel {
   background: var(--color-surface);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
+  box-shadow: var(--shadow-card);
 }
 
 .el-cuenta-panel-title {
   margin: 0 0 var(--space-1) 0;
   font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--color-ink);
+  color: var(--color-primary);
 }
 
 .el-cuenta-panel-desc {

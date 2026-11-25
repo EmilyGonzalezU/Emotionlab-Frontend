@@ -1,4 +1,5 @@
 import React from "react";
+import emotionLabLogo from "../../assets/emotionlab-logo.png";
 import "./Actualizacion.css";
 
 export default function Actualizacion({
@@ -26,7 +27,7 @@ export default function Actualizacion({
     <main className="update-page">
       <section className="update-panel">
         <div className="update-brand">
-          <div className="update-brand-mark">E</div>
+          <img className="update-brand-mark" src={emotionLabLogo} alt="" />
 
           <span>EmotionLab</span>
         </div>

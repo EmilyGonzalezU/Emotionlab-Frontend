@@ -1,4 +1,5 @@
 import { getApiUrl } from "../config/api.js";
+import { clearAuthStorage } from "./authStorage.js";
 
 /**
  * Error tipado para respuestas del backend. Permite distinguir un
@@ -17,12 +18,11 @@ function getToken() {
   return localStorage.getItem("token");
 }
 
-// Limpia la sesión y vuelve al login cuando el backend confirma que
-// el token ya no es válido. No cambia el mecanismo de autenticación:
-// es lo mismo que cada pantalla hacía manualmente en su propio
-// "cerrar sesión", centralizado para no repetirlo.
+// Un 401 invalida la sesión; un 403 es una denegación de permisos y
+// nunca debe cerrar una sesión válida.
 function handleSessionExpired() {
-  localStorage.clear();
+  clearAuthStorage();
+  window.dispatchEvent(new Event("emotionlab:session-expired"));
   window.location.hash = "#/";
 }
 
@@ -35,16 +35,15 @@ function handleSessionExpired() {
  * método ni forma del payload — es una envoltura, no una migración
  * de contrato.
  *
- * Esta utilidad todavía no está conectada a ninguna pantalla: se
- * introduce en la Fase 0 y se adopta pantalla por pantalla en las
- * fases siguientes, para no cambiar comportamiento de golpe.
+ * Los errores 401 limpian la sesión y la caché privada; los errores 403
+ * se devuelven al consumidor sin alterar la autenticación.
  */
 export async function apiRequest(
   path,
-  { method = "GET", body, headers, skipAuth = false } = {},
+  { method = "GET", body, headers, skipAuth = false, responseType = "json" } = {},
 ) {
   const finalHeaders = {
-    "Content-Type": "application/json",
+    ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
     ...headers,
   };
 
@@ -71,7 +70,9 @@ export async function apiRequest(
 
   let data = null;
   const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
+  if (responseType === "blob" && response.ok) {
+    data = await response.blob();
+  } else if (contentType.includes("application/json")) {
     try {
       data = await response.json();
     } catch {

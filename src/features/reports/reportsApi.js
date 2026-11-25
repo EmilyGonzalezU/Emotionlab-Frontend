@@ -1,5 +1,4 @@
 import { api } from "../../lib/apiClient.js";
-import { getApiUrl } from "../../config/api.js";
 
 /**
  * Capa de datos de Reportes (Fase 4). Se separa de
@@ -34,6 +33,16 @@ export function createReportRequest(sessionId, motivo) {
   });
 }
 
+export function createTrackingReportRequest(trackingId, reportFormat = "PDF") {
+  return api.post(`/trackings/${encodeURIComponent(trackingId)}/report-requests`, { report_format: reportFormat });
+}
+
+export function fetchTrackingReportDownloadUrl(trackingId, requestId) {
+  return api.get(
+    `/trackings/${encodeURIComponent(trackingId)}/report-requests/${encodeURIComponent(requestId)}/download`,
+  );
+}
+
 export function fetchPendingReportRequests() {
   return api.get("/report-requests?status=PENDING");
 }
@@ -65,46 +74,9 @@ export function fetchReportDownloadUrl(id) {
   return api.get(`/report-requests/${id}/download`);
 }
 
-/**
- * Contexto de sesión para la revisión del administrador
- * (GET /sessions/:id, reutilizado del flujo del especialista).
- *
- * A diferencia del resto de este archivo, esta llamada NO pasa por
- * apiClient: hasta ahora este endpoint solo lo consumía el rol
- * teacher/especialista, y no hay ninguna confirmación de que un 401
- * del administrador contra esta ruta signifique "sesión vencida" — en
- * vez de eso, podría significar simplemente que este rol no está
- * autorizado para ver el detalle completo de la sesión. apiClient
- * cerraría la sesión automáticamente ante cualquier 401
- * (comportamiento correcto para el resto de los endpoints, pero
- * incorrecto aquí si el 401 en realidad es un problema de permisos).
- * Por eso el 401/403 se maneja localmente, devolviendo un estado
- * honesto en vez de inventar un endpoint nuevo o modificar el
- * backend.
- */
-export async function fetchSessionContextForAdmin(sessionId) {
-  const token = localStorage.getItem("token");
-
-  let response;
-  try {
-    response = await fetch(getApiUrl(`/sessions/${sessionId}`), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-  } catch {
-    return { status: "network_error", data: null };
-  }
-
-  if (response.status === 401 || response.status === 403) {
-    return { status: "unauthorized", data: null };
-  }
-
-  if (!response.ok) {
-    return { status: "error", data: null };
-  }
-
-  const data = await response.json().catch(() => null);
-  return { status: "ok", data };
+export function downloadSessionsExcel({ from, to } = {}) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  return api.get(`/reports/excel${params.size ? `?${params}` : ""}`, { responseType: "blob" });
 }

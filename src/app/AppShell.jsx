@@ -23,12 +23,12 @@ import "./AppShell.css";
  *      (useReadTracking).
  */
 export default function AppShell({ role }) {
-  const baseItems = NAV_BY_ROLE[role] || [];
+  const baseItems = useMemo(() => NAV_BY_ROLE[role] || [], [role]);
 
   // ============================================================
   // BADGE: ADMIN = pendientes de acción
   // ============================================================
-  const { data: pendingData } = usePendingReportRequests();
+  const { data: pendingData } = usePendingReportRequests({ enabled: role === "admin" });
   const pendingCount = useMemo(() => {
     if (role !== "admin") return null;
     const items = Array.isArray(pendingData)
@@ -44,7 +44,7 @@ export default function AppShell({ role }) {
   // ============================================================
   // BADGE: ESPECIALISTA = cambios no vistos (local)
   // ============================================================
-  const { data: myRequestsData } = useMyReportRequests();
+  const { data: myRequestsData } = useMyReportRequests({ enabled: role === "teacher" });
   const myRequests = useMemo(() => {
     if (role !== "teacher") return [];
     return Array.isArray(myRequestsData)
@@ -71,7 +71,7 @@ export default function AppShell({ role }) {
 
   return (
     <div className="el-shell">
-      <Sidebar items={items} />
+      <Sidebar items={items} role={role} />
       <div className="el-shell-body">
         <Header items={items} role={role} />
         <main className="el-shell-main">

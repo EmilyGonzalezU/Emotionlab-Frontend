@@ -89,9 +89,15 @@ export default function CrearEspecialista() {
 
   return (
     <div className="el-user-create">
-      <button type="button" className="el-user-create-back" onClick={() => navigate("/admin/visualizadores")}>
-        <FiArrowLeft aria-hidden="true" /> Volver
-      </button>
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={FiArrowLeft}
+        className="el-user-create-back"
+        onClick={() => navigate("/admin/visualizadores")}
+      >
+        Volver
+      </Button>
 
       <PageHeader
         title="Crear especialista"
